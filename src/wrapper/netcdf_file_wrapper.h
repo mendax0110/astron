@@ -2,7 +2,8 @@
 #include <filesystem>
 #include <netcdf.h>
 #include <stdexcept>
-#include <vector>
+
+#include "../../third_party/mexVec/include/Vec.hpp"
 
 namespace astron::wrapper
 {
@@ -78,7 +79,7 @@ namespace astron::wrapper
          * @return The vector of double values.
          * @throws std::runtime_error if the variable cannot be read or has an unexpected size.
          */
-        static std::vector<double> readVector(int file, const char* name, int expectedSize, bool required = true);
+        static mex::Vec<double> readVector(int file, const char* name, int expectedSize, bool required = true);
 
         /**
          * @brief Reads a two-dimensional array of doubles from a NetCDF file.
@@ -90,7 +91,7 @@ namespace astron::wrapper
          * @return The vector of double values.
          * @throws std::runtime_error if the variable cannot be read or has an unexpected size.
          */
-        static std::vector<double> readModes(int file, const char* name, int surfaces, int modes, bool required = true);
+        static mex::Vec<double> readModes(int file, const char* name, int surfaces, int modes, bool required = true);
 
     private:
         int id_ = -1;

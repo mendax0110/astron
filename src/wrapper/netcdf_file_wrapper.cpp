@@ -60,7 +60,7 @@ double NetcdfFile::readOptionalDouble(int file, const char* name)
     return value;
 }
 
-std::vector<double> NetcdfFile::readVector(int file, const char* name, const int expectedSize, const bool required)
+mex::Vec<double> NetcdfFile::readVector(int file, const char* name, const int expectedSize, const bool required)
 {
     const int id = variableId(file, name, required);
     if (id < 0)
@@ -82,7 +82,7 @@ std::vector<double> NetcdfFile::readVector(int file, const char* name, const int
         throw std::runtime_error(std::string("Unexpected length of '") + name + "'");
     }
 
-    std::vector<double> values(length);
+    mex::Vec<double> values(length);
     if (nc_get_var_double(file, id, values.data()) != NC_NOERR)
     {
         throw std::runtime_error(std::string("Cannot read '") + name + "'");
@@ -90,7 +90,7 @@ std::vector<double> NetcdfFile::readVector(int file, const char* name, const int
     return values;
 }
 
-std::vector<double> NetcdfFile::readModes(const int file, const char* name, const int surfaces, const int modes, const bool required)
+mex::Vec<double> NetcdfFile::readModes(const int file, const char* name, const int surfaces, const int modes, const bool required)
 {
     const int id = variableId(file, name, required);
     if (id < 0)
@@ -114,7 +114,7 @@ std::vector<double> NetcdfFile::readModes(const int file, const char* name, cons
         throw std::runtime_error(std::string("Unexpected dimensions of '") + name + "'");
     }
 
-    std::vector<double> raw(first * second);
+    mex::Vec<double> raw(first * second);
     if (nc_get_var_double(file, id, raw.data()) != NC_NOERR)
     {
         throw std::runtime_error(std::string("Cannot read '") + name + "'");
@@ -126,7 +126,7 @@ std::vector<double> NetcdfFile::readModes(const int file, const char* name, cons
     }
     if (first == static_cast<size_t>(modes) && second == static_cast<size_t>(surfaces))
     {
-        std::vector<double> reordered(raw.size());
+        mex::Vec<double> reordered(raw.size());
         for (int surface = 0; surface < surfaces; ++surface)
         {
             for (int mode = 0; mode < modes; ++mode)

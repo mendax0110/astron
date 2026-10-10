@@ -4,6 +4,8 @@
 #include "jobs/vmec_runner.h"
 #include "simulation/particle.h"
 
+#include "../../third_party/mexVec/include/Vec.hpp"
+
 #include <QMainWindow>
 #include <QString>
 #include <QTimer>
@@ -13,7 +15,6 @@
 #include <array>
 #include <cstddef>
 #include <optional>
-#include <vector>
 
 class QCheckBox;
 class QDoubleSpinBox;
@@ -165,7 +166,7 @@ namespace astron
         vtkSmartPointer<vtkActor> markerActor_;
 
         std::optional<core::Equilibrium> equilibrium_;
-        std::vector<std::array<double, 3>> guidePath_;
+        mex::Vec<std::array<double, 3>> guidePath_;
         size_t markerIndex_ = 0;
         jobs::VmecRunner runner_;
         QTimer animationTimer_;
@@ -174,7 +175,7 @@ namespace astron
         QPushButton* stopParticlesButton_ = nullptr;
         QCheckBox* relativisticCheck_ = nullptr;
         QTimer particleTimer_;
-        std::vector<simulation::Particle> simParticles_;
-        std::vector<vtkSmartPointer<vtkActor>> simParticleActors_;
+        mex::Vec<simulation::Particle> simParticles_;
+        mex::Vec<vtkSmartPointer<vtkActor>> simParticleActors_;
     };
 } // namespace astron

@@ -1,7 +1,8 @@
 #pragma once
 
 #include <filesystem>
-#include <vector>
+
+#include "../../third_party/mexVec/include/Vec.hpp"
 
 /**
  * @brief Astron namespace for core data structures and algorithms \namespace astron::core
@@ -25,12 +26,12 @@ namespace astron::core
         std::filesystem::path source;
         int fieldPeriods = 0;
         int radialSurfaces = 0;
-        std::vector<FourierMode> modes;
-        std::vector<double> radiusCos;
-        std::vector<double> heightSin;
-        std::vector<double> radiusSin;
-        std::vector<double> heightCos;
-        std::vector<double> rotationalTransform;
+        mex::Vec<FourierMode> modes;
+        mex::Vec<double> radiusCos;
+        mex::Vec<double> heightSin;
+        mex::Vec<double> radiusSin;
+        mex::Vec<double> heightCos;
+        mex::Vec<double> rotationalTransform;
         double plasmaVolume = 0.0;
         double betaTotal = 0.0;
 
