@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  style:
+    name: Format and namespace style
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install formatting tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-18 python3
+      - name: Check clang-format
+        run: find src tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 clang-format-18 --dry-run --Werror
+      - name: Check namespace style
+        run: python3 tools/check_namespace_style.py
+
+  build:
+    name: Build, unit tests, and clang-tidy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build git pkg-config \
+            qt6-base-dev libnetcdf-dev libgtest-dev mesa-common-dev freeglut3-dev \
+            libgl1-mesa-dev libx11-dev libxt-dev clang-tidy-18
+      - name: Restore Qt 6 VTK build
+        id: vtk-cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/vtk-qt6
+          key: vtk-9.5.2-qt6-ubuntu24-v1
+      - name: Build VTK with Qt 6
+        if: steps.vtk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --branch v9.5.2 --depth 1 --recursive https://github.com/Kitware/VTK.git "$RUNNER_TEMP/vtk-src"
+          cmake -S "$RUNNER_TEMP/vtk-src" -B "$RUNNER_TEMP/vtk-build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/vtk-qt6" \
+            -DVTK_QT_VERSION=6 \
+            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
+            -DVTK_BUILD_TESTING=OFF \
+            -DVTK_BUILD_EXAMPLES=OFF \
+            -DVTK_ENABLE_WRAPPING=OFF
+          cmake --build "$RUNNER_TEMP/vtk-build" --parallel 4
+          cmake --install "$RUNNER_TEMP/vtk-build"
+      - name: Configure Astron
+        run: |
+          cmake -S . -B "$RUNNER_TEMP/astron-build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/vtk-qt6" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DASTRON_BUILD_TESTS=ON
+      - name: Build Astron and tests
+        run: cmake --build "$RUNNER_TEMP/astron-build" --parallel 4
+      - name: Run unit tests
+        run: ctest --test-dir "$RUNNER_TEMP/astron-build" --output-on-failure
+      - name: Run clang-tidy
+        run: find src tests -type f -name '*.cpp' -print0 | xargs -0 clang-tidy-18 -p "$RUNNER_TEMP/astron-build" -warnings-as-errors='*' --quiet

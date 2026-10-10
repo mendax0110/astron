@@ -1,0 +1,17 @@
+# Ignore build output directories
+/build/
+/cmake-build-debug/
+/cmake-build-release/
+
+# Ignore IDE and editor specific files
+/.idea/
+/.vscode/
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+*.user
+*.autosave
+
+# Ignore data files
+astron-data
