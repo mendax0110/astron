@@ -24,7 +24,7 @@ std::array<double, 3> astron::visualization::position(const core::Equilibrium* e
 {
     double radius = 0.0;
     double height = 0.0;
-    if(equilibrium != nullptr)
+    if (equilibrium != nullptr)
     {
         radius = equilibrium->radius(surface, theta, phi);
         height = equilibrium->height(surface, theta, phi);
@@ -41,25 +41,25 @@ vtkSmartPointer<vtkPolyData> astron::visualization::surfaceData(const core::Equi
 {
     const auto points = vtkSmartPointer<vtkPoints>::New();
     const auto faces = vtkSmartPointer<vtkCellArray>::New();
-    for(int toroidal = 0; toroidal < ToroidalSamples; ++toroidal)
+    for (int toroidal = 0; toroidal < ToroidalSamples; ++toroidal)
     {
         const double phi = 2.0 * Pi * toroidal / ToroidalSamples;
-        for(int poloidal = 0; poloidal < PoloidalSamples; ++poloidal)
+        for (int poloidal = 0; poloidal < PoloidalSamples; ++poloidal)
         {
             const double theta = 2.0 * Pi * poloidal / PoloidalSamples;
             const auto point = position(equilibrium, surface, theta, phi, scale);
             points->InsertNextPoint(point.data());
         }
     }
-    for(int toroidal = 0; toroidal < ToroidalSamples; ++toroidal)
+    for (int toroidal = 0; toroidal < ToroidalSamples; ++toroidal)
     {
-        for(int poloidal = 0; poloidal < PoloidalSamples; ++poloidal)
+        for (int poloidal = 0; poloidal < PoloidalSamples; ++poloidal)
         {
             const int nextToroidal = (toroidal + 1) % ToroidalSamples;
             const int nextPoloidal = (poloidal + 1) % PoloidalSamples;
-            std::array<vtkIdType, 4> corners = {
-                static_cast<vtkIdType>(toroidal * PoloidalSamples + poloidal), static_cast<vtkIdType>(nextToroidal * PoloidalSamples + poloidal),
-                static_cast<vtkIdType>(nextToroidal * PoloidalSamples + nextPoloidal), static_cast<vtkIdType>(toroidal * PoloidalSamples + nextPoloidal)};
+            std::array<vtkIdType, 4> corners = {static_cast<vtkIdType>(toroidal * PoloidalSamples + poloidal), static_cast<vtkIdType>(nextToroidal * PoloidalSamples + poloidal),
+                                                static_cast<vtkIdType>(nextToroidal * PoloidalSamples + nextPoloidal),
+                                                static_cast<vtkIdType>(toroidal * PoloidalSamples + nextPoloidal)};
             faces->InsertNextCell(4, corners.data());
         }
     }
@@ -73,11 +73,11 @@ vtkSmartPointer<vtkPolyData> astron::visualization::schematicCoils()
 {
     const auto points = vtkSmartPointer<vtkPoints>::New();
     const auto lines = vtkSmartPointer<vtkCellArray>::New();
-    for(int coil = 0; coil < 50; ++coil)
+    for (int coil = 0; coil < 50; ++coil)
     {
         const double center = 2.0 * Pi * coil / 50.0;
         lines->InsertNextCell(97);
-        for(int step = 0; step <= 96; ++step)
+        for (int step = 0; step <= 96; ++step)
         {
             const double theta = 2.0 * Pi * step / 96.0;
             const double phi = center + 0.045 * std::sin(theta + 5.0 * center);

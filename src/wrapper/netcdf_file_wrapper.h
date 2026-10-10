@@ -1,6 +1,6 @@
-#include <netcdf.h>
 #include <array>
 #include <filesystem>
+#include <netcdf.h>
 #include <stdexcept>
 #include <vector>
 
@@ -13,7 +13,6 @@ namespace astron::wrapper
     class NetcdfFile
     {
     public:
-
         /**
          * @brief Constructs a NetcdfFile object and opens the specified NetCDF file.
          * @param path The path to the NetCDF file to open.
@@ -96,4 +95,4 @@ namespace astron::wrapper
     private:
         int id_ = -1;
     };
-}
+} // namespace astron::wrapper

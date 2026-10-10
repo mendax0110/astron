@@ -1,9 +1,9 @@
 #include "io/vmec_netcdf_reader.h"
 #include "wrapper/netcdf_file_wrapper.h"
 
-#include <netcdf.h>
 #include <array>
 #include <cmath>
+#include <netcdf.h>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -20,7 +20,7 @@ astron::core::Equilibrium astron::io::loadVmecEquilibrium(const std::filesystem:
     result.radialSurfaces = NetcdfFile::readInt(file.id(), "ns");
     const int modeCount = NetcdfFile::readInt(file.id(), "mnmax");
 
-    if(result.fieldPeriods < 1 || result.radialSurfaces < 2 || modeCount < 1)
+    if (result.fieldPeriods < 1 || result.radialSurfaces < 2 || modeCount < 1)
     {
         throw std::runtime_error("Invalid VMEC dimensions");
     }
@@ -28,7 +28,7 @@ astron::core::Equilibrium astron::io::loadVmecEquilibrium(const std::filesystem:
     const auto poloidalModes = NetcdfFile::readVector(file.id(), "xm", modeCount);
     const auto toroidalModes = NetcdfFile::readVector(file.id(), "xn", modeCount);
     result.modes.reserve(modeCount);
-    for(int index = 0; index < modeCount; ++index)
+    for (int index = 0; index < modeCount; ++index)
     {
         result.modes.push_back({poloidalModes[index], toroidalModes[index]});
     }
@@ -42,4 +42,3 @@ astron::core::Equilibrium astron::io::loadVmecEquilibrium(const std::filesystem:
     result.betaTotal = NetcdfFile::readOptionalDouble(file.id(), "betatotal");
     return result;
 }
-

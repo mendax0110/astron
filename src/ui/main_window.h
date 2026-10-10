@@ -40,7 +40,6 @@ namespace astron
     class MainWindow final : public QMainWindow
     {
     public:
-
         /**
          * @brief Constructs a MainWindow object.
          * @param parent The parent QWidget, defaulting to nullptr.
@@ -48,7 +47,6 @@ namespace astron
         explicit MainWindow(QWidget* parent = nullptr);
 
     private:
-
         /**
          * @brief Builds the user interface components of the main window.
          */

@@ -36,7 +36,7 @@ TEST(VmecRunnerTest, CancelsRunningProcessWithoutImportingResult)
     QObject::connect(&runner, &VmecRunner::logMessage, &readyLoop,
                      [&](const QString& message)
                      {
-                         if(message.contains("READY"))
+                         if (message.contains("READY"))
                          {
                              ready = true;
                              readyLoop.quit();

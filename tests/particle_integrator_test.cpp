@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "simulation/particle.h"
 #include "simulation/boris_integrator.h"
 #include "simulation/field_provider.h"
+#include "simulation/particle.h"
 
 #include <cmath>
 
@@ -32,7 +32,7 @@ TEST(ParticleIntegratorTest, GyrationInUniformB)
 
     const double initial_ke = 0.5 * p.m * (p.v[0] * p.v[0] + p.v[1] * p.v[1] + p.v[2] * p.v[2]);
 
-    for(int i = 0; i < steps; ++i)
+    for (int i = 0; i < steps; ++i)
     {
         BorisIntegrator::step(p, dt, field);
     }
@@ -42,7 +42,7 @@ TEST(ParticleIntegratorTest, GyrationInUniformB)
     // Energy should be conserved (no E field)
     EXPECT_NEAR(final_ke, initial_ke, 1e-6);
 
-    //After one period, particle should return near starting position (modulo numerical error)
+    // After one period, particle should return near starting position (modulo numerical error)
     const double dist = std::sqrt((p.x[0] * p.x[0]) + (p.x[1] * p.x[1]));
     EXPECT_NEAR(dist, 0.0, 5e-3);
 }
@@ -69,12 +69,13 @@ TEST(ParticleIntegratorTest, RelativisticGyrationEnergyConserved)
 
     auto gamma = [&](const Particle& pr)
     {
-        const double v2 = pr.v[0]*pr.v[0] + pr.v[1]*pr.v[1] + pr.v[2]*pr.v[2];
-        return 1.0 / std::sqrt(1.0 - v2 / (c*c));
+        const double v2 = pr.v[0] * pr.v[0] + pr.v[1] * pr.v[1] + pr.v[2] * pr.v[2];
+        return 1.0 / std::sqrt(1.0 - v2 / (c * c));
     };
 
     const double gamma0 = gamma(p);
-    for (int i = 0; i < steps; ++i) BorisIntegrator::step(p, dt, field, true);
+    for (int i = 0; i < steps; ++i)
+        BorisIntegrator::step(p, dt, field, true);
     const double gamma1 = gamma(p);
     EXPECT_NEAR(gamma1, gamma0, 1e-6);
 }

@@ -9,7 +9,7 @@ ReferenceAlignment: Left
 # Namespace spelling is enforced by .clang-tidy; clang-format only controls layout.
 CompactNamespaces: false
 BreakBeforeBraces: Allman
-SpaceBeforeParens: Never
+SpaceBeforeParens: ControlStatements
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false

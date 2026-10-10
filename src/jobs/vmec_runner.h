@@ -90,7 +90,6 @@ namespace astron::jobs
         void finished(bool cancelled, const QString& resultPath, const QString& message);
 
     private:
-
         /**
          * @brief Handles the completion of the VMEC process, emitting the finished signal with appropriate parameters.
          * @param exitCode The exit code of the process.

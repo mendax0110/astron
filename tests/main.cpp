@@ -8,7 +8,7 @@
 int main(int argc, char* argv[])
 {
     QCoreApplication application(argc, argv);
-    if(argc == 2 && std::string_view(argv[1]) == "--solver-child")
+    if (argc == 2 && std::string_view(argv[1]) == "--solver-child")
     {
         std::puts("READY");
         std::fflush(stdout);

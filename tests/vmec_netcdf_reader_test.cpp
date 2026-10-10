@@ -19,7 +19,7 @@ namespace
 {
     void checkNetcdf(const int status)
     {
-        if(status != NC_NOERR)
+        if (status != NC_NOERR)
         {
             throw std::runtime_error(nc_strerror(status));
         }
@@ -35,7 +35,7 @@ namespace
 
         ~WritableNetcdf()
         {
-            if(id_ >= 0)
+            if (id_ >= 0)
             {
                 nc_close(id_);
             }
@@ -83,7 +83,7 @@ namespace
         checkNetcdf(nc_def_var(file.id(), "xm", NC_DOUBLE, 1, &modeDimension, &poloidalModes));
         checkNetcdf(nc_def_var(file.id(), "xn", NC_DOUBLE, 1, &modeDimension, &toroidalModes));
         const std::array<int, 2> dimensions = transposed ? std::array{modeDimension, surfaceDimension} : std::array{surfaceDimension, modeDimension};
-        if(includeRadius)
+        if (includeRadius)
         {
             checkNetcdf(nc_def_var(file.id(), "rmnc", NC_DOUBLE, 2, dimensions.data(), &radiusCos));
         }
@@ -108,7 +108,7 @@ namespace
         checkNetcdf(nc_put_var_int(file.id(), modes, &modeCount));
         checkNetcdf(nc_put_var_double(file.id(), poloidalModes, xm.data()));
         checkNetcdf(nc_put_var_double(file.id(), toroidalModes, xn.data()));
-        if(includeRadius)
+        if (includeRadius)
         {
             checkNetcdf(nc_put_var_double(file.id(), radiusCos, radius.data()));
         }

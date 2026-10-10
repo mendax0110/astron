@@ -17,4 +17,4 @@ namespace astron::simulation
         double m = 1.0;
         double q = 1.0;
     };
-}
+} // namespace astron::simulation

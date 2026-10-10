@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/equilibrium.h"
-#include <vtkSmartPointer.h>
 #include <array>
+#include <vtkSmartPointer.h>
 
 class vtkActor;
 class vtkPolyData;
@@ -13,7 +13,8 @@ class vtkPolyData;
 namespace astron::visualization
 {
     /**
-     * @brief Computes the 3D position of a point on a stellarator surface based on the equilibrium data, surface index, poloidal angle (theta), toroidal angle (phi), and scale factor.
+     * @brief Computes the 3D position of a point on a stellarator surface based on the equilibrium data, surface index, poloidal angle (theta), toroidal angle (phi), and scale
+     * factor.
      * @param equilibrium Pointer to the Equilibrium object containing the stellarator geometry data. Can be nullptr for default geometry.
      * @param surface The index of the radial surface to evaluate.
      * @param theta The poloidal angle in radians.

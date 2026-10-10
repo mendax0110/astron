@@ -52,4 +52,4 @@ namespace astron::core
          */
         [[nodiscard]] double height(int surface, double theta, double phi) const;
     };
-} // namespace astron
+} // namespace astron::core

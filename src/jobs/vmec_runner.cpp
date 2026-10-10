@@ -19,7 +19,7 @@ VmecRunner::VmecRunner(QObject* parent, QString runsRoot) : QObject(parent), run
     connect(&killTimer_, &QTimer::timeout, this,
             [this]()
             {
-                if(active_ && process_.state() != QProcess::NotRunning)
+                if (active_ && process_.state() != QProcess::NotRunning)
                 {
                     emit logMessage("VMEC++ did not stop in five seconds; killing the process.");
                     process_.kill();
@@ -28,7 +28,7 @@ VmecRunner::VmecRunner(QObject* parent, QString runsRoot) : QObject(parent), run
     connect(&process_, &QProcess::started, this,
             [this]()
             {
-                if(cancelRequested_)
+                if (cancelRequested_)
                 {
                     process_.terminate();
                 }
@@ -46,15 +46,15 @@ bool VmecRunner::isRunning() const
 
 VmecStartResult VmecRunner::start(const VmecRunRequest& request)
 {
-    if(active_)
+    if (active_)
     {
         return {{}, QStringLiteral("VMEC++ is already running.")};
     }
-    if(request.inputPath.isEmpty() || request.inputText.isEmpty())
+    if (request.inputPath.isEmpty() || request.inputText.isEmpty())
     {
         return {{}, QStringLiteral("Open a VMEC input file first.")};
     }
-    if(request.executable.trimmed().isEmpty())
+    if (request.executable.trimmed().isEmpty())
     {
         return {{}, QStringLiteral("Set the VMEC++ executable path.")};
     }
@@ -62,18 +62,18 @@ VmecStartResult VmecRunner::start(const VmecRunRequest& request)
     const QFileInfo original(request.inputPath);
     const QString base = runsRoot_.isEmpty() ? QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/runs" : runsRoot_;
     const QString runDirectory = base + "/" + QUuid::createUuid().toString(QUuid::WithoutBraces);
-    if(!QDir().mkpath(runDirectory))
+    if (!QDir().mkpath(runDirectory))
     {
         return {{}, QStringLiteral("Cannot create the run directory.")};
     }
 
     QFile input(runDirectory + "/" + original.fileName());
-    if(!input.open(QIODevice::WriteOnly | QIODevice::Text))
+    if (!input.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         return {{}, input.errorString()};
     }
     const QByteArray contents = request.inputText.toUtf8();
-    if(input.write(contents) != contents.size() || !input.flush())
+    if (input.write(contents) != contents.size() || !input.flush())
     {
         return {{}, input.errorString()};
     }
@@ -94,13 +94,13 @@ VmecStartResult VmecRunner::start(const VmecRunRequest& request)
 
 void VmecRunner::cancel()
 {
-    if(!active_ || cancelRequested_)
+    if (!active_ || cancelRequested_)
     {
         return;
     }
     cancelRequested_ = true;
     emit logMessage("Stopping VMEC++...");
-    if(process_.state() == QProcess::Running)
+    if (process_.state() == QProcess::Running)
     {
         process_.terminate();
     }
@@ -109,11 +109,11 @@ void VmecRunner::cancel()
 
 void VmecRunner::handleError(const QProcess::ProcessError error)
 {
-    if(!active_)
+    if (!active_)
     {
         return;
     }
-    if(error == QProcess::FailedToStart)
+    if (error == QProcess::FailedToStart)
     {
         killTimer_.stop();
         active_ = false;
@@ -127,25 +127,25 @@ void VmecRunner::handleError(const QProcess::ProcessError error)
 
 void VmecRunner::finishProcess(const int exitCode, const QProcess::ExitStatus status)
 {
-    if(!active_)
+    if (!active_)
     {
         return;
     }
     killTimer_.stop();
     active_ = false;
     emit logMessage(QString("VMEC++ finished with exit code %1").arg(exitCode));
-    if(cancelRequested_)
+    if (cancelRequested_)
     {
         emit finished(true, {}, QStringLiteral("VMEC++ run stopped."));
         return;
     }
-    if(status != QProcess::NormalExit || exitCode != 0)
+    if (status != QProcess::NormalExit || exitCode != 0)
     {
         emit finished(false, {}, QStringLiteral("VMEC++ failed; inspect the run log."));
         return;
     }
     const QStringList outputs = QDir(activeRunDirectory_).entryList({"wout_*.nc"}, QDir::Files);
-    if(outputs.isEmpty())
+    if (outputs.isEmpty())
     {
         emit finished(false, {}, QStringLiteral("VMEC++ finished, but no wout_*.nc was found in the run directory."));
         return;

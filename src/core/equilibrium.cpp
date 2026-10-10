@@ -8,11 +8,11 @@ double Equilibrium::radius(const int surface, const double theta, const double p
 {
     double value = 0.0;
     const size_t offset = static_cast<size_t>(surface) * modes.size();
-    for(size_t mode = 0; mode < modes.size(); ++mode)
+    for (size_t mode = 0; mode < modes.size(); ++mode)
     {
         const double angle = modes[mode].m * theta - modes[mode].n * phi;
         value += radiusCos[offset + mode] * std::cos(angle);
-        if(!radiusSin.empty())
+        if (!radiusSin.empty())
         {
             value += radiusSin[offset + mode] * std::sin(angle);
         }
@@ -24,11 +24,11 @@ double Equilibrium::height(const int surface, const double theta, const double p
 {
     double value = 0.0;
     const size_t offset = static_cast<size_t>(surface) * modes.size();
-    for(size_t mode = 0; mode < modes.size(); ++mode)
+    for (size_t mode = 0; mode < modes.size(); ++mode)
     {
         const double angle = modes[mode].m * theta - modes[mode].n * phi;
         value += heightSin[offset + mode] * std::sin(angle);
-        if(!heightCos.empty())
+        if (!heightCos.empty())
         {
             value += heightCos[offset + mode] * std::cos(angle);
         }

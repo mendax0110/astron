@@ -31,7 +31,10 @@ namespace astron::simulation
          * @param x A 3D position in space represented as an array of doubles.
          * @return A 3D electric field vector at the specified position.
          */
-        virtual std::array<double, 3> E(const std::array<double, 3>& /*x*/) const { return {0.0, 0.0, 0.0}; }
+        virtual std::array<double, 3> E(const std::array<double, 3>& /*x*/) const
+        {
+            return {0.0, 0.0, 0.0};
+        }
     };
 
     /**
@@ -44,14 +47,19 @@ namespace astron::simulation
          * @brief Constructs a UniformField with a specified magnetic field strength in the z-direction.
          * @param bz The magnitude of the uniform magnetic field in the z-direction.
          */
-        explicit UniformField(const double bz) : bz_(bz) {}
+        explicit UniformField(const double bz) : bz_(bz)
+        {
+        }
 
         /**
          * @brief Returns the uniform magnetic field vector at any position.
          * @param x A 3D position in space (not used in this implementation).
          * @return A 3D magnetic field vector with the specified z-component.
          */
-        std::array<double, 3> B(const std::array<double, 3>&) const override { return {0.0, 0.0, bz_}; }
+        std::array<double, 3> B(const std::array<double, 3>&) const override
+        {
+            return {0.0, 0.0, bz_};
+        }
 
         double bz_ = 0.0;
     };
@@ -69,7 +77,9 @@ namespace astron::simulation
          * @param bz The magnitude of the axial component of the magnetic field.
          * @param k The wave number for the helical component, determining its spatial frequency along the z-axis.
          */
-        HelicalField(const double b0, const double bz, const double k) : b0_(b0), bz_(bz), k_(k) {}
+        HelicalField(const double b0, const double bz, const double k) : b0_(b0), bz_(bz), k_(k)
+        {
+        }
 
         /**
          * @brief Returns the helical magnetic field vector at a given position.
@@ -87,4 +97,4 @@ namespace astron::simulation
         double bz_ = 0.0;
         double k_ = 1.0;
     };
-}
+} // namespace astron::simulation

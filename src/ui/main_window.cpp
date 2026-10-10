@@ -26,9 +26,9 @@
 #include <QVBoxLayout>
 #include <QVTKOpenGLNativeWidget.h>
 
-#include "simulation/particle.h"
 #include "simulation/boris_integrator.h"
 #include "simulation/field_provider.h"
+#include "simulation/particle.h"
 
 #include <vtkActor.h>
 #include <vtkCellArray.h>
@@ -59,7 +59,7 @@ namespace
      */
     QString scientificStyleSheet()
     {
-       return R"(
+        return R"(
            QMainWindow, QWidget, QDockWidget, QGroupBox, QAbstractScrollArea, QStatusBar, QLabel, QPlainTextEdit, QToolTip {
                background-color: #10171d;
                color: #edf4fe;
@@ -172,12 +172,12 @@ namespace
         const QRegularExpression pattern(QStringLiteral("\\b%1\\s*=\\s*([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eEdD][+-]?\\d+)?)").arg(QRegularExpression::escape(name)),
                                          QRegularExpression::CaseInsensitiveOption);
         auto matches = pattern.globalMatch(source);
-        while(matches.hasNext())
+        while (matches.hasNext())
         {
             const auto match = matches.next();
             const qsizetype lineStart = source.lastIndexOf(QLatin1Char('\n'), match.capturedStart()) + 1;
             const QString prefix = source.mid(lineStart, match.capturedStart() - lineStart);
-            if(!prefix.contains(QLatin1Char('!')) && !prefix.contains(QLatin1Char('#')))
+            if (!prefix.contains(QLatin1Char('!')) && !prefix.contains(QLatin1Char('#')))
             {
                 return match;
             }
@@ -194,7 +194,7 @@ namespace
     std::optional<double> readInputParameter(const QString& source, const QString& name)
     {
         const auto match = findInputParameter(source, name);
-        if(!match.hasMatch())
+        if (!match.hasMatch())
         {
             return std::nullopt;
         }
@@ -202,7 +202,7 @@ namespace
         number.replace(QLatin1Char('D'), QLatin1Char('E'), Qt::CaseInsensitive);
         bool valid = false;
         const double value = number.toDouble(&valid);
-        if(!valid || !std::isfinite(value))
+        if (!valid || !std::isfinite(value))
         {
             return std::nullopt;
         }
@@ -219,7 +219,7 @@ namespace
     bool replaceInputParameter(QString& source, const QString& name, const QString& value)
     {
         const auto match = findInputParameter(source, name);
-        if(!match.hasMatch())
+        if (!match.hasMatch())
         {
             return false;
         }
@@ -309,7 +309,7 @@ void MainWindow::buildUi()
     toroidalModesSpin_ = new QSpinBox(parametersGroup);
     toroidalModesSpin_->setRange(0, 256);
     parametersLayout->addRow("Toroidal modes (NTOR)", toroidalModesSpin_);
-    for(QWidget* control : std::array<QWidget*, 4>{fluxSpin_, currentSpin_, poloidalModesSpin_, toroidalModesSpin_})
+    for (QWidget* control : std::array<QWidget*, 4>{fluxSpin_, currentSpin_, poloidalModesSpin_, toroidalModesSpin_})
     {
         control->setEnabled(false);
     }
@@ -396,13 +396,15 @@ void MainWindow::buildUi()
                 statusBar()->showMessage("Stopping VMEC++...");
             });
 
-    connect(startParticlesButton_, &QPushButton::clicked, this, [this]()
+    connect(startParticlesButton_, &QPushButton::clicked, this,
+            [this]()
             {
                 startParticlesButton_->setEnabled(false);
                 stopParticlesButton_->setEnabled(true);
                 startParticleSimulation();
             });
-    connect(stopParticlesButton_, &QPushButton::clicked, this, [this]()
+    connect(stopParticlesButton_, &QPushButton::clicked, this,
+            [this]()
             {
                 stopParticlesButton_->setEnabled(false);
                 startParticlesButton_->setEnabled(true);
@@ -419,7 +421,7 @@ void MainWindow::buildUi()
     connect(animateCheck_, &QCheckBox::toggled, this,
             [this](const bool enabled)
             {
-                if(enabled && guideCheck_->isChecked())
+                if (enabled && guideCheck_->isChecked())
                 {
                     animationTimer_.start();
                 }
@@ -439,7 +441,7 @@ void MainWindow::buildUi()
             {
                 guideActor_->SetVisibility(visible);
                 markerActor_->SetVisibility(visible);
-                if(visible && animateCheck_->isChecked())
+                if (visible && animateCheck_->isChecked())
                 {
                     animationTimer_.start();
                 }
@@ -481,7 +483,7 @@ void MainWindow::buildScene()
 void MainWindow::openResult()
 {
     const QString path = QFileDialog::getOpenFileName(this, "Open VMEC output", {}, "VMEC NetCDF (*.nc);;All files (*)");
-    if(!path.isEmpty())
+    if (!path.isEmpty())
     {
         loadResult(path);
     }
@@ -490,12 +492,12 @@ void MainWindow::openResult()
 void MainWindow::openInput()
 {
     const QString path = QFileDialog::getOpenFileName(this, "Open VMEC input", {}, "VMEC input (input.* *.json);;All files (*)");
-    if(path.isEmpty())
+    if (path.isEmpty())
     {
         return;
     }
     QFile file(path);
-    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         QMessageBox::warning(this, "Input error", file.errorString());
         return;
@@ -521,19 +523,19 @@ void MainWindow::readInputControls()
     currentSpin_->setEnabled(validCurrent);
     poloidalModesSpin_->setEnabled(validPoloidal);
     toroidalModesSpin_->setEnabled(validToroidal);
-    if(validFlux)
+    if (validFlux)
     {
         fluxSpin_->setValue(*flux);
     }
-    if(validCurrent)
+    if (validCurrent)
     {
         currentSpin_->setValue(*current);
     }
-    if(validPoloidal)
+    if (validPoloidal)
     {
         poloidalModesSpin_->setValue(static_cast<int>(*poloidal));
     }
-    if(validToroidal)
+    if (validToroidal)
     {
         toroidalModesSpin_->setValue(static_cast<int>(*toroidal));
     }
@@ -547,11 +549,11 @@ void MainWindow::applyInputControls()
     int changed = 0;
     auto apply = [&source, &changed, this](const size_t index, const QWidget* control, const QString& name, const QString& value)
     {
-        if(!control->isEnabled() || !inputDirty_[index])
+        if (!control->isEnabled() || !inputDirty_[index])
         {
             return true;
         }
-        if(!replaceInputParameter(source, name, value))
+        if (!replaceInputParameter(source, name, value))
         {
             QMessageBox::warning(this, "Input changed", name + " was removed from the editor. Read values from the editor again.");
             return false;
@@ -559,13 +561,12 @@ void MainWindow::applyInputControls()
         ++changed;
         return true;
     };
-    if(!apply(0, fluxSpin_, "PHIEDGE", QString::number(fluxSpin_->value(), 'g', 12)) || !apply(1, currentSpin_, "CURTOR", QString::number(currentSpin_->value(), 'g', 12)) ||
-       !apply(2, poloidalModesSpin_, "MPOL", QString::number(poloidalModesSpin_->value())) ||
-       !apply(3, toroidalModesSpin_, "NTOR", QString::number(toroidalModesSpin_->value())))
+    if (!apply(0, fluxSpin_, "PHIEDGE", QString::number(fluxSpin_->value(), 'g', 12)) || !apply(1, currentSpin_, "CURTOR", QString::number(currentSpin_->value(), 'g', 12)) ||
+        !apply(2, poloidalModesSpin_, "MPOL", QString::number(poloidalModesSpin_->value())) || !apply(3, toroidalModesSpin_, "NTOR", QString::number(toroidalModesSpin_->value())))
     {
         return;
     }
-    if(changed == 0)
+    if (changed == 0)
     {
         statusBar()->showMessage("No VMEC parameter changes to apply.");
         return;
@@ -588,7 +589,7 @@ void MainWindow::loadResult(const QString& path)
         renderWindow_->Render();
         statusBar()->showMessage("Loaded " + path);
     }
-    catch(const std::exception& error)
+    catch (const std::exception& error)
     {
         QMessageBox::warning(this, "Result error", error.what());
     }
@@ -596,11 +597,11 @@ void MainWindow::loadResult(const QString& path)
 
 void MainWindow::runVmec()
 {
-    if(runner_.isRunning())
+    if (runner_.isRunning())
     {
         return;
     }
-    if(inputPath_->text().isEmpty() || inputEditor_->toPlainText().isEmpty())
+    if (inputPath_->text().isEmpty() || inputEditor_->toPlainText().isEmpty())
     {
         QMessageBox::information(this, "Input required", "Open a VMEC input file first.");
         return;
@@ -608,7 +609,7 @@ void MainWindow::runVmec()
     log_->clear();
     const jobs::VmecRunRequest request{inputPath_->text(), inputEditor_->toPlainText(), solverPath_->text(), solverThreadsSpin_->value()};
     const auto runDirectory = runner_.start(request);
-    if(!runDirectory.succeeded())
+    if (!runDirectory.succeeded())
     {
         QMessageBox::warning(this, "Run error", runDirectory.error);
         return;
@@ -626,7 +627,7 @@ void MainWindow::finishVmec(const bool cancelled, const QString& resultPath, con
     stopButton_->setEnabled(false);
     appendLog(message);
     statusBar()->showMessage(message);
-    if(cancelled || resultPath.isEmpty())
+    if (cancelled || resultPath.isEmpty())
     {
         return;
     }
@@ -649,7 +650,7 @@ void MainWindow::rebuildGuide()
     const auto lines = vtkSmartPointer<vtkCellArray>::New();
     constexpr int Count = 640;
     lines->InsertNextCell(Count);
-    for(int index = 0; index < Count; ++index)
+    for (int index = 0; index < Count; ++index)
     {
         const double phi = 4.0 * Pi * index / (Count - 1);
         const double theta = 0.35 + transform * phi;
@@ -662,7 +663,7 @@ void MainWindow::rebuildGuide()
     data->SetLines(lines);
     vtkPolyDataMapper::SafeDownCast(guideActor_->GetMapper())->SetInputData(data);
     markerIndex_ = 0;
-    if(!guidePath_.empty())
+    if (!guidePath_.empty())
     {
         markerActor_->SetPosition(guidePath_.front().data());
     }
@@ -670,7 +671,7 @@ void MainWindow::rebuildGuide()
 
 void MainWindow::updateMarker()
 {
-    if(guidePath_.empty() || !guideCheck_->isChecked() || !isVisible() || isMinimized())
+    if (guidePath_.empty() || !guideCheck_->isChecked() || !isVisible() || isMinimized())
     {
         return;
     }
@@ -681,7 +682,7 @@ void MainWindow::updateMarker()
 
 void MainWindow::updateMetrics() const
 {
-    if(!equilibrium_)
+    if (!equilibrium_)
     {
         metricsLabel_->setText("Schematic geometry. Coils and plasma shape are illustrative. "
                                "Open a VMEC result for calculated values.");
@@ -690,15 +691,15 @@ void MainWindow::updateMetrics() const
     const int surface = std::max(1, (equilibrium_->radialSurfaces - 1) * surfaceSlider_->value() / 100);
     QString text =
         QString("Field periods: %1\nRadial surfaces: %2\nFourier modes: %3").arg(equilibrium_->fieldPeriods).arg(equilibrium_->radialSurfaces).arg(equilibrium_->modes.size());
-    if(!equilibrium_->rotationalTransform.empty())
+    if (!equilibrium_->rotationalTransform.empty())
     {
         text += QString("\nRotational transform: %1").arg(equilibrium_->rotationalTransform[static_cast<size_t>(surface)], 0, 'g', 5);
     }
-    if(equilibrium_->plasmaVolume > 0.0)
+    if (equilibrium_->plasmaVolume > 0.0)
     {
         text += QString("\nPlasma volume: %1 m³").arg(equilibrium_->plasmaVolume, 0, 'g', 6);
     }
-    if(equilibrium_->betaTotal > 0.0)
+    if (equilibrium_->betaTotal > 0.0)
     {
         text += QString("\nTotal β: %1%").arg(equilibrium_->betaTotal * 100.0, 0, 'g', 4);
     }
@@ -714,14 +715,14 @@ void MainWindow::appendLog(const QString& message) const
 
 void MainWindow::startParticleSimulation()
 {
-    //create demo particles...
+    // create demo particles...
     simParticles_.clear();
     simParticleActors_.clear();
     constexpr int count = 8;
     std::mt19937_64 rng(123456);
     std::uniform_real_distribution<double> posDist(-1.0, 1.0);
     std::uniform_real_distribution<double> velDist(-0.5, 0.5);
-    for(int i = 0; i < count; ++i)
+    for (int i = 0; i < count; ++i)
     {
         simulation::Particle p;
         p.m = 1.0;
@@ -747,9 +748,10 @@ void MainWindow::startParticleSimulation()
 void MainWindow::stopParticleSimulation()
 {
     particleTimer_.stop();
-    for(auto& a : simParticleActors_)
+    for (auto& a : simParticleActors_)
     {
-        if(a) renderer_->RemoveActor(a);
+        if (a)
+            renderer_->RemoveActor(a);
     }
     simParticleActors_.clear();
     simParticles_.clear();
@@ -758,9 +760,10 @@ void MainWindow::stopParticleSimulation()
 
 void MainWindow::particleStep()
 {
-    if(simParticles_.empty()) return;
+    if (simParticles_.empty())
+        return;
     std::unique_ptr<simulation::FieldProvider> provider;
-    if(equilibrium_)
+    if (equilibrium_)
     {
         provider = std::make_unique<simulation::HelicalField>(0.1, 1.0, 1.0);
     }
@@ -771,11 +774,11 @@ void MainWindow::particleStep()
 
     const double dt = 0.001;
     const bool rel = relativisticCheck_ && relativisticCheck_->isChecked();
-    for(size_t i=0;i<simParticles_.size();++i)
+    for (size_t i = 0; i < simParticles_.size(); ++i)
     {
         simulation::BorisIntegrator::step(simParticles_[i], dt, *provider, rel);
         auto& actor = simParticleActors_[i];
-        if(actor)
+        if (actor)
         {
             actor->SetPosition(simParticles_[i].x.data());
         }
