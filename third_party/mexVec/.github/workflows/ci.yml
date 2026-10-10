@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test-benchmark:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure (Release)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Run tests (GoogleTest)
+        run: ctest --test-dir build --output-on-failure -C Release
+
+      - name: Build benchmark target
+        run: cmake --build build --target vec_benchmark --config Release --parallel
+
+      - name: Run benchmarks (smoke) [macOS/Linux]
+        if: runner.os != 'Windows'
+        run: ./build/tests/vec_benchmark --benchmark_min_time=0.01s --benchmark_repetitions=1 --benchmark_filter=".*"
+
+      - name: Run benchmarks (smoke) [Windows]
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $exe = "build\\tests\\Release\\vec_benchmark.exe"
+          if (-not (Test-Path $exe)) { $exe = "build\\tests\\vec_benchmark.exe" }
+          & $exe --benchmark_min_time=0.01s --benchmark_repetitions=1 --benchmark_filter=".*"

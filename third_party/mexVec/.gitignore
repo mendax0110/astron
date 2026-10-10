@@ -1,0 +1,14 @@
+# Ignore the build folder
+build/
+
+# Ignore the cmake-build-debug folder
+cmake-build-debug/
+
+# Ignore the build_coverage folder
+build_coverage/
+
+# Ignore Clion folder
+.idea/
+
+# Ignore macos system files
+.DS_Store
