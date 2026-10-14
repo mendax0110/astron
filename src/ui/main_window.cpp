@@ -731,8 +731,9 @@ void MainWindow::updateMetrics() const
     {
         text += QString("\nTotal β: %1%").arg(equilibrium_->betaTotal * 100.0, 0, 'g', 4);
     }
-    text += equilibrium_->hasField() ? QString("\nField data: %1 Nyquist modes (particle field %2)").arg(equilibrium_->fieldModes.size()).arg(vmecField_ ? "ready" : "built on first start")
-                                     : QString("\nField data: not in this file, particles unavailable");
+    text += equilibrium_->hasField()
+                ? QString("\nField data: %1 Nyquist modes (particle field %2)").arg(equilibrium_->fieldModes.size()).arg(vmecField_ ? "ready" : "built on first start")
+                : QString("\nField data: not in this file, particles unavailable");
     text += "\n\nStationary equilibrium. The animated path is illustrative, "
             "not a traced field line or plasma velocity.";
     metricsLabel_->setText(text);
@@ -829,7 +830,11 @@ bool MainWindow::startParticleSimulation()
     const double gyroperiod = 2.0 * simulation::constants::PI * simulation::constants::PROTON_MASS / (simulation::constants::ELEMENTARY_CHARGE * strongestField);
     particleDt_ = gyroperiod / StepsPerGyroperiod;
     particleFrame_ = 0;
-    appendLog(QString("Particles: %1 protons, %2 eV, dt = %3 ns, %4 steps per frame").arg(ParticleCount).arg(ParticleEnergyEv).arg(particleDt_ * 1e9, 0, 'g', 4).arg(ParticleSubstepsPerFrame));
+    appendLog(QString("Particles: %1 protons, %2 eV, dt = %3 ns, %4 steps per frame")
+                  .arg(ParticleCount)
+                  .arg(ParticleEnergyEv)
+                  .arg(particleDt_ * 1e9, 0, 'g', 4)
+                  .arg(ParticleSubstepsPerFrame));
     particleTimer_.start();
     renderWindow_->Render();
     return true;
@@ -889,7 +894,10 @@ void MainWindow::particleStep()
     if (++particleFrame_ % 15 == 0)
     {
         const int total = static_cast<int>(simParticles_.size());
-        statusBar()->showMessage(QString("Particles: %1 confined, %2 lost, t = %3 µs").arg(confined).arg(total - confined).arg(particleFrame_ * ParticleSubstepsPerFrame * particleDt_ * 1e6, 0, 'g', 4));
+        statusBar()->showMessage(QString("Particles: %1 confined, %2 lost, t = %3 µs")
+                                     .arg(confined)
+                                     .arg(total - confined)
+                                     .arg(particleFrame_ * ParticleSubstepsPerFrame * particleDt_ * 1e6, 0, 'g', 4));
     }
     renderWindow_->Render();
 }

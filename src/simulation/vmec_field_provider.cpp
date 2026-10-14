@@ -82,8 +82,10 @@ namespace
      */
     void lagrange(const double tau, Weights& w)
     {
-        w.value = {-tau * (tau - 1.0) * (tau - 2.0) / 6.0, (tau + 1.0) * (tau - 1.0) * (tau - 2.0) / 2.0, -(tau + 1.0) * tau * (tau - 2.0) / 2.0, (tau + 1.0) * tau * (tau - 1.0) / 6.0};
-        w.slope = {-(3.0 * tau * tau - 6.0 * tau + 2.0) / 6.0, (3.0 * tau * tau - 4.0 * tau - 1.0) / 2.0, -(3.0 * tau * tau - 2.0 * tau - 2.0) / 2.0, (3.0 * tau * tau - 1.0) / 6.0};
+        w.value = {-tau * (tau - 1.0) * (tau - 2.0) / 6.0, (tau + 1.0) * (tau - 1.0) * (tau - 2.0) / 2.0, -(tau + 1.0) * tau * (tau - 2.0) / 2.0,
+                   (tau + 1.0) * tau * (tau - 1.0) / 6.0};
+        w.slope = {-(3.0 * tau * tau - 6.0 * tau + 2.0) / 6.0, (3.0 * tau * tau - 4.0 * tau - 1.0) / 2.0, -(3.0 * tau * tau - 2.0 * tau - 2.0) / 2.0,
+                   (3.0 * tau * tau - 1.0) / 6.0};
     }
 
     /**

@@ -47,8 +47,8 @@ namespace astron::simulation
 
     /**
      * @brief Reference evaluation of the equilibrium by summing the Fourier series.
-     * @details B = B^theta * dr/dtheta + B^phi * dr/dphi, with B^theta, B^phi from bsupumnc, bsupvmnc. Radial values blend VMEC mesh rows linearly in s; odd-m coefficients are blended as
-     * c / sqrt(s) to keep the correct rho^m behaviour at the axis. This is slow and intended for grid construction and validation.
+     * @details B = B^theta * dr/dtheta + B^phi * dr/dphi, with B^theta, B^phi from bsupumnc, bsupvmnc. Radial values blend VMEC mesh rows linearly in s; odd-m coefficients are
+     * blended as c / sqrt(s) to keep the correct rho^m behaviour at the axis. This is slow and intended for grid construction and validation.
      * @param equilibrium Equilibrium with hasField() == true.
      * @param rho sqrt(s), 0 <= rho <= 1.
      * @param theta Poloidal angle in radians.
@@ -60,9 +60,9 @@ namespace astron::simulation
     /**
      * @brief Magnetic field of a stellarator-symmetric VMEC equilibrium, sampled from a tricubic grid. \class VmecFieldProvider
      * @details Positions are Cartesian meters with phi = atan2(y, x), matching VMEC's cylindrical frame. B is returned in tesla. E is zero (VMEC has no electrostatic potential).
-     * The grid stores R, Z and (B_R, B_phi, B_Z) on (rho, theta, phi) nodes. Evaluation inverts (R, Z) -> (rho, theta) by Newton iteration on the interpolated geometry, then interpolates B.
-     * Interpolation is 4-point Lagrange in each direction (fourth-order accurate values), periodic in theta and phi.
-     * The provider is immutable after construction and therefore safe to call from several threads.
+     * The grid stores R, Z and (B_R, B_phi, B_Z) on (rho, theta, phi) nodes. Evaluation inverts (R, Z) -> (rho, theta) by Newton iteration on the interpolated geometry, then
+     * interpolates B. Interpolation is 4-point Lagrange in each direction (fourth-order accurate values), periodic in theta and phi. The provider is immutable after construction
+     * and therefore safe to call from several threads.
      */
     class VmecFieldProvider final : public FieldProvider
     {
