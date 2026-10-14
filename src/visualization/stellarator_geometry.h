@@ -15,7 +15,7 @@ namespace astron::visualization
     /**
      * @brief Enum representing different color schemes for visualization. \enum ColorScheme
      */
-    enum class ColorScheme
+    enum class ColorScheme : std::uint8_t
     {
         Plasma = 0,
         Coils = 1,
