@@ -6,6 +6,8 @@
  */
 namespace astron::simulation::constants
 {
-    constexpr double C = 299792458.0; // Speed of light in m/s (SI)
-    constexpr double PI = std::numbers::pi; // Pi constant
-}
+    // Speed of light in m/s (SI)
+    constexpr double C = 299792458.0;
+    // Pi constant
+    constexpr double PI = std::numbers::pi;
+} // namespace astron::simulation::constants
