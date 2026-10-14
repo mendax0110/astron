@@ -1,5 +1,7 @@
 #include "boris_integrator.h"
 
+#include "constants.h"
+
 #include <array>
 #include <cmath>
 
@@ -77,13 +79,12 @@ void BorisIntegrator::step(Particle& p, const double dt, const FieldProvider& pr
     }
 
     // Relativistic Boris
-    constexpr double c = 299792458.0; // speed of light (SI)
     const double q = p.q;
     const double m = p.m;
 
     // u = gamma * v
     const double v2 = p.v[0] * p.v[0] + p.v[1] * p.v[1] + p.v[2] * p.v[2];
-    const double gamma = 1.0 / std::sqrt(1.0 - v2 / (c * c));
+    const double gamma = 1.0 / std::sqrt(1.0 - v2 / (constants::C * constants::C));
     const std::array<double, 3> u{p.v[0] * gamma, p.v[1] * gamma, p.v[2] * gamma};
 
     // u_minus = u + (q/m) * E * (dt/2)
@@ -95,7 +96,7 @@ void BorisIntegrator::step(Particle& p, const double dt, const FieldProvider& pr
 
     // gamma_minus
     const double uminus2 = u_minus[0] * u_minus[0] + u_minus[1] * u_minus[1] + u_minus[2] * u_minus[2];
-    const double gamma_minus = std::sqrt(1.0 + uminus2 / (c * c));
+    const double gamma_minus = std::sqrt(1.0 + uminus2 / (constants::C * constants::C));
 
     // t = (q/m) * B * (dt/2) / gamma_minus
     std::array<double, 3> t{0.0, 0.0, 0.0};
@@ -140,7 +141,7 @@ void BorisIntegrator::step(Particle& p, const double dt, const FieldProvider& pr
 
     // gamma_new
     const double u_new2 = u_plus[0] * u_plus[0] + u_plus[1] * u_plus[1] + u_plus[2] * u_plus[2];
-    const double gamma_new = std::sqrt(1.0 + u_new2 / (c * c));
+    const double gamma_new = std::sqrt(1.0 + u_new2 / (constants::C * constants::C));
 
     // v_new = u_new / gamma_new
     p.v[0] = u_plus[0] / gamma_new;

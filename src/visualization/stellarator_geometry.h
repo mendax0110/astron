@@ -13,6 +13,36 @@ class vtkPolyData;
 namespace astron::visualization
 {
     /**
+     * @brief Enum representing different color schemes for visualization. \enum ColorScheme
+     */
+    enum class ColorScheme
+    {
+        Plasma = 0,
+        Coils = 1,
+        GuideField = 2,
+        Marker = 3,
+        Renderer = 4
+    };
+
+    /**
+     * @brief Struct to hold RGB color values and opacity for visualization. \struct RGBColorValues
+     */
+    struct RGBColorValues
+    {
+        double r;
+        double g;
+        double b;
+        double opacity;
+    };
+
+    /**
+     * @brief Returns the RGB color values and opacity for a given color scheme.
+     * @param scheme The ColorScheme enum value specifying the desired color scheme.
+     * @return An RGBColorValues struct containing the red, green, blue, and opacity values for the specified color scheme.
+     */
+    [[nodiscard]] RGBColorValues colorValues(ColorScheme scheme);
+
+    /**
      * @brief Computes the 3D position of a point on a stellarator surface based on the equilibrium data, surface index, poloidal angle (theta), toroidal angle (phi), and scale
      * factor.
      * @param equilibrium Pointer to the Equilibrium object containing the stellarator geometry data. Can be nullptr for default geometry.
@@ -42,11 +72,8 @@ namespace astron::visualization
     /**
      * @brief Creates a vtkActor object for rendering a given vtkPolyData geometry with specified color and opacity.
      * @param data Pointer to the vtkPolyData object containing the geometry.
-     * @param red The red component of the actor's color (0.0 to 1.0).
-     * @param green The green component of the actor's color (0.0 to 1.0).
-     * @param blue The blue component of the actor's color (0.0 to 1.0).
-     * @param opacity The opacity of the actor (0.0 to 1.0).
+     * @param color An RGBColorValues struct specifying the color and opacity for the actor.
      * @return A vtkSmartPointer to a vtkActor object.
      */
-    [[nodiscard]] vtkSmartPointer<vtkActor> actorFor(vtkPolyData* data, double red, double green, double blue, double opacity);
+    [[nodiscard]] vtkSmartPointer<vtkActor> actorFor(vtkPolyData* data, const RGBColorValues& color);
 } // namespace astron::visualization

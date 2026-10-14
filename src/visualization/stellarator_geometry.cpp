@@ -20,6 +20,25 @@ namespace
     constexpr int ToroidalSamples = 160;
 } // namespace
 
+RGBColorValues astron::visualization::colorValues(const ColorScheme scheme)
+{
+    switch (scheme)
+    {
+    case ColorScheme::Plasma:
+        return {0.17, 0.72, 0.84, 0.58};
+    case ColorScheme::Coils:
+        return {0.90, 0.72, 0.42, 0.78};
+    case ColorScheme::GuideField:
+        return {0.56, 0.89, 0.76, 1.0};
+    case ColorScheme::Marker:
+        return {0.82, 0.96, 1.0, 1.0};
+    case ColorScheme::Renderer:
+        return {1.0, 0.2, 0.2, 1.0};
+    default:
+        return {1.0, 1.0, 1.0, 1.0}; // Default to white if unknown
+    }
+}
+
 std::array<double, 3> astron::visualization::position(const core::Equilibrium* equilibrium, const int surface, const double theta, const double phi, const double scale)
 {
     double radius = 0.0;
@@ -100,13 +119,13 @@ vtkSmartPointer<vtkPolyData> astron::visualization::schematicCoils()
     return result;
 }
 
-vtkSmartPointer<vtkActor> astron::visualization::actorFor(vtkPolyData* data, const double red, const double green, const double blue, const double opacity)
+vtkSmartPointer<vtkActor> astron::visualization::actorFor(vtkPolyData* data, const RGBColorValues& color)
 {
     const auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputData(data);
     auto actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
-    actor->GetProperty()->SetColor(red, green, blue);
-    actor->GetProperty()->SetOpacity(opacity);
+    actor->GetProperty()->SetColor(color.r, color.g, color.b);
+    actor->GetProperty()->SetOpacity(color.opacity);
     return actor;
 }

@@ -27,6 +27,7 @@
 #include <QVTKOpenGLNativeWidget.h>
 
 #include "simulation/boris_integrator.h"
+#include "simulation/constants.h"
 #include "simulation/field_provider.h"
 #include "simulation/particle.h"
 
@@ -51,8 +52,6 @@ using namespace astron;
 
 namespace
 {
-    constexpr double Pi = std::numbers::pi;
-
     /**
      * @brief Returns a QString containing the scientific style sheet for the application.
      * @return A QString containing the scientific style sheet.
@@ -231,19 +230,27 @@ namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
-    buildUi();
-    buildScene();
-    rebuildSurface();
-    rebuildGuide();
-    updateMetrics();
-    renderer_->ResetCamera();
-    renderWindow_->Render();
+    try
+    {
+        buildUi();
+        buildScene();
+        rebuildSurface();
+        rebuildGuide();
+        updateMetrics();
+        renderer_->ResetCamera();
+        renderWindow_->Render();
 
-    animationTimer_.setInterval(100);
-    connect(&animationTimer_, &QTimer::timeout, this, [this]() { updateMarker(); });
-    connect(&runner_, &jobs::VmecRunner::logMessage, this, [this](const QString& message) { appendLog(message); });
-    connect(&runner_, &jobs::VmecRunner::finished, this,
-            [this](const bool cancelled, const QString& resultPath, const QString& message) { finishVmec(cancelled, resultPath, message); });
+        animationTimer_.setInterval(100);
+        connect(&animationTimer_, &QTimer::timeout, this, [this]() { updateMarker(); });
+        connect(&runner_, &jobs::VmecRunner::logMessage, this, [this](const QString& message) { appendLog(message); });
+        connect(&runner_, &jobs::VmecRunner::finished, this,
+                [this](const bool cancelled, const QString& resultPath, const QString& message) { finishVmec(cancelled, resultPath, message); });
+    }
+    catch (const std::exception& e)
+    {
+        QMessageBox::critical(this, "Error", QString("Failed to initialize the application: %1").arg(e.what()));
+        throw;
+    }
 }
 
 void MainWindow::buildUi()
@@ -463,17 +470,17 @@ void MainWindow::buildScene()
     renderWindow_->AddRenderer(renderer_);
     viewport_->setRenderWindow(renderWindow_);
 
-    plasmaActor_ = visualization::actorFor(visualization::surfaceData(nullptr, 0, 1.0), 0.17, 0.72, 0.84, 0.58);
+    plasmaActor_ = visualization::actorFor(visualization::surfaceData(nullptr, 0, 1.0), visualization::colorValues(visualization::ColorScheme::Plasma));
     renderer_->AddActor(plasmaActor_);
-    coilsActor_ = visualization::actorFor(visualization::schematicCoils(), 0.90, 0.72, 0.42, 0.78);
+    coilsActor_ = visualization::actorFor(visualization::schematicCoils(), visualization::colorValues(visualization::ColorScheme::Coils));
     renderer_->AddActor(coilsActor_);
-    guideActor_ = visualization::actorFor(vtkSmartPointer<vtkPolyData>::New(), 0.56, 0.89, 0.76, 1.0);
+    guideActor_ = visualization::actorFor(vtkSmartPointer<vtkPolyData>::New(), visualization::colorValues(visualization::ColorScheme::GuideField));
     guideActor_->GetProperty()->SetLineWidth(3.0);
     renderer_->AddActor(guideActor_);
     const auto sphere = vtkSmartPointer<vtkSphereSource>::New();
     sphere->SetRadius(0.075);
     sphere->Update();
-    markerActor_ = visualization::actorFor(sphere->GetOutput(), 0.82, 0.96, 1.0, 1.0);
+    markerActor_ = visualization::actorFor(sphere->GetOutput(), visualization::colorValues(visualization::ColorScheme::Marker));
     renderer_->AddActor(markerActor_);
 
     // Particle actors container (initialized empty)
@@ -652,7 +659,7 @@ void MainWindow::rebuildGuide()
     lines->InsertNextCell(Count);
     for (int index = 0; index < Count; ++index)
     {
-        const double phi = 4.0 * Pi * index / (Count - 1);
+        const double phi = 4.0 * simulation::constants::PI * index / (Count - 1);
         const double theta = 0.35 + transform * phi;
         auto point = visualization::position(equilibrium_ ? &*equilibrium_ : nullptr, surface, theta, phi, surfaceSlider_->value() / 100.0);
         guidePath_.push_back(point);
@@ -735,7 +742,7 @@ void MainWindow::startParticleSimulation()
         sphere->SetRadius(0.05);
         sphere->SetCenter(p.x[0], p.x[1], p.x[2]);
         sphere->Update();
-        auto actor = visualization::actorFor(sphere->GetOutput(), 1.0, 0.2, 0.2, 1.0);
+        auto actor = visualization::actorFor(sphere->GetOutput(), visualization::colorValues(visualization::ColorScheme::Renderer));
         renderer_->AddActor(actor);
         simParticleActors_.push_back(actor);
     }
@@ -772,10 +779,10 @@ void MainWindow::particleStep()
         provider = std::make_unique<simulation::UniformField>(1.0);
     }
 
-    const double dt = 0.001;
     const bool rel = relativisticCheck_ && relativisticCheck_->isChecked();
     for (size_t i = 0; i < simParticles_.size(); ++i)
     {
+        constexpr double dt = 0.001;
         simulation::BorisIntegrator::step(simParticles_[i], dt, *provider, rel);
         auto& actor = simParticleActors_[i];
         if (actor)
