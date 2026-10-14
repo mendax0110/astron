@@ -38,6 +38,8 @@ add_library(astron_domain STATIC
     src/simulation/boris_integrator.h
     src/simulation/field_provider.h
     src/simulation/constants.h
+    src/simulation/vmec_field_provider.cpp
+    src/simulation/vmec_field_provider.h
 )
 target_include_directories(astron_domain PUBLIC src)
 target_link_libraries(astron_domain PUBLIC Qt6::Core PkgConfig::NETCDF)

@@ -1,9 +1,22 @@
 # Astron
 
-Astron is a workbench for Wendelstein 7-X magnetic equilibria.
+Astron is a workbench for Wendelstein 7-X magnetic equilibria, with charged-particle tracing in the VMEC field.
 
 ### UI
-[![Astron UI](resources/pictures/ui.png)](resources/pictures/ui.png)
+[![Astron UI](resources/pictures/ui.mp4)](resources/pictures/ui.mp4)
+
+## Particles in the equilibrium field
+
+With a VMEC result loaded, **Start particles** launches 16 test protons (1 keV) on random flux surfaces and advances them with the Boris pusher in the magnetic field of the loaded equilibrium (SI units, tesla and meters).
+
+- **Field:** VmecFieldProvider builds B from the VMEC contravariant components (bsupumnc, bsupvmnc) and the Fourier geometry, B_r = B_t * (dr / dt) + B_p * (dr / dp). It samples a periodic tricubic grid in (rho = sqrt(s), t, p) over one field period and finds the flux coordinates of a position by Newton iteration.
+- **Time step:** 1/40 of the proton gyroperiod at the strongest field, with 100 steps per frame. Gyro-orbits are about 2 mm, so the balls show guiding-centre motion, not the spiral.
+- **Losses:** a particle that leaves the last closed flux surface is hidden. The status bar shows the confined and lost counts.
+- **Files without field data:** a result that lacks bsupumnc and bsupvmnc cannot run particles.
+
+These are test particles, there are no collisions, no electric field, no wall, and no self-consistent fields.
+The equilibrium is a fixed-boundary VMEC solution without edge islands.
+ToDo: validated field against field-line tracing
 
 ## Build on Ubuntu 24.04 or WSL
 

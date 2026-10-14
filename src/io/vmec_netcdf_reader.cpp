@@ -40,5 +40,31 @@ astron::core::Equilibrium astron::io::loadVmecEquilibrium(const std::filesystem:
     result.rotationalTransform = NetcdfFile::readVector(file.id(), "iotaf", result.radialSurfaces, false);
     result.plasmaVolume = NetcdfFile::readOptionalDouble(file.id(), "volume_p");
     result.betaTotal = NetcdfFile::readOptionalDouble(file.id(), "betatotal");
+
+    // Magnetic field lives on the Nyquist mode set (mnmax_nyq) and the half radial mesh.
+    // It is optional so geometry-only files still load.
+    if (NetcdfFile::variableId(file.id(), "mnmax_nyq", false) >= 0)
+    {
+        const int fieldModeCount = NetcdfFile::readInt(file.id(), "mnmax_nyq");
+        if (fieldModeCount > 0)
+        {
+            const auto fieldPoloidal = NetcdfFile::readVector(file.id(), "xm_nyq", fieldModeCount, false);
+            const auto fieldToroidal = NetcdfFile::readVector(file.id(), "xn_nyq", fieldModeCount, false);
+            auto bTheta = NetcdfFile::readModes(file.id(), "bsupumnc", result.radialSurfaces, fieldModeCount, false);
+            auto bPhi = NetcdfFile::readModes(file.id(), "bsupvmnc", result.radialSurfaces, fieldModeCount, false);
+            auto bStrength = NetcdfFile::readModes(file.id(), "bmnc", result.radialSurfaces, fieldModeCount, false);
+            if (!fieldPoloidal.empty() && !fieldToroidal.empty() && !bTheta.empty() && !bPhi.empty())
+            {
+                result.fieldModes.reserve(fieldModeCount);
+                for (int index = 0; index < fieldModeCount; ++index)
+                {
+                    result.fieldModes.push_back({fieldPoloidal[index], fieldToroidal[index]});
+                }
+                result.bThetaCos = std::move(bTheta);
+                result.bPhiCos = std::move(bPhi);
+                result.bStrengthCos = std::move(bStrength);
+            }
+        }
+    }
     return result;
 }

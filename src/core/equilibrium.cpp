@@ -35,3 +35,9 @@ double Equilibrium::height(const int surface, const double theta, const double p
     }
     return value;
 }
+
+bool Equilibrium::hasField() const
+{
+    const size_t expected = static_cast<size_t>(radialSurfaces) * fieldModes.size();
+    return radialSurfaces > 0 && !fieldModes.empty() && bThetaCos.size() == expected && bPhiCos.size() == expected;
+}

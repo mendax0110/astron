@@ -32,6 +32,11 @@ namespace astron::core
         mex::Vec<double> radiusSin;
         mex::Vec<double> heightCos;
         mex::Vec<double> rotationalTransform;
+        mex::Vec<FourierMode> fieldModes;
+        mex::Vec<double> bThetaCos;
+        mex::Vec<double> bPhiCos;
+        mex::Vec<double> bStrengthCos;
+
         double plasmaVolume = 0.0;
         double betaTotal = 0.0;
 
@@ -52,5 +57,11 @@ namespace astron::core
          * @return A double representing the height at the specified surface and angles.
          */
         [[nodiscard]] double height(int surface, double theta, double phi) const;
+
+        /**
+         * @brief Checks if the equilibrium has valid field data.
+         * @return true if the equilibrium has valid field data, false otherwise.
+         */
+        [[nodiscard]] bool hasField() const;
     };
 } // namespace astron::core

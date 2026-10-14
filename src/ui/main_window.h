@@ -3,6 +3,7 @@
 #include "core/equilibrium.h"
 #include "jobs/vmec_runner.h"
 #include "simulation/particle.h"
+#include "simulation/vmec_field_provider.h"
 
 #include "../../third_party/mexVec/include/Vec.hpp"
 
@@ -14,6 +15,7 @@
 
 #include <array>
 #include <cstddef>
+#include <memory>
 #include <optional>
 
 class QCheckBox;
@@ -126,7 +128,13 @@ namespace astron
         /**
          * @brief Starts the particle simulation, initializing particles and starting the simulation timer.
          */
-        void startParticleSimulation();
+        [[nodiscard]] bool startParticleSimulation();
+
+        /**
+         * @brief Builds the VMEC field interpolation grid for the loaded equilibrium if it does not exist yet.
+         * @return true if a field provider is available.
+         */
+        [[nodiscard]] bool ensureVmecField();
 
         /**
          * @brief Stops the particle simulation, stopping the simulation timer and clearing particles.
@@ -177,5 +185,9 @@ namespace astron
         QTimer particleTimer_;
         mex::Vec<simulation::Particle> simParticles_;
         mex::Vec<vtkSmartPointer<vtkActor>> simParticleActors_;
+        std::shared_ptr<const simulation::VmecFieldProvider> vmecField_;
+        mex::Vec<int> simParticleAlive_;
+        double particleDt_ = 0.0;
+        int particleFrame_ = 0;
     };
 } // namespace astron

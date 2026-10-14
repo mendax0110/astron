@@ -11,6 +11,7 @@
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QGroupBox>
+#include <QGuiApplication>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -30,6 +31,7 @@
 #include "simulation/constants.h"
 #include "simulation/field_provider.h"
 #include "simulation/particle.h"
+#include "simulation/vmec_field_provider.h"
 
 #include <vtkActor.h>
 #include <vtkCellArray.h>
@@ -44,6 +46,7 @@
 #include <algorithm>
 #include <cmath>
 #include <exception>
+#include <memory>
 #include <numbers>
 #include <random>
 #include <utility>
@@ -52,6 +55,13 @@ using namespace astron;
 
 namespace
 {
+    constexpr int ParticleCount = 16;
+    constexpr int ParticleSubstepsPerFrame = 100;
+    constexpr double ParticleEnergyEv = 1000.0;
+    constexpr double StepsPerGyroperiod = 40.0;
+    constexpr double StartRhoMin = 0.2;
+    constexpr double StartRhoMax = 0.8;
+
     /**
      * @brief Returns a QString containing the scientific style sheet for the application.
      * @return A QString containing the scientific style sheet.
@@ -242,6 +252,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
         animationTimer_.setInterval(100);
         connect(&animationTimer_, &QTimer::timeout, this, [this]() { updateMarker(); });
+        particleTimer_.setInterval(16); // about 60 Hz
+        connect(&particleTimer_, &QTimer::timeout, this, [this]() { particleStep(); });
         connect(&runner_, &jobs::VmecRunner::logMessage, this, [this](const QString& message) { appendLog(message); });
         connect(&runner_, &jobs::VmecRunner::finished, this,
                 [this](const bool cancelled, const QString& resultPath, const QString& message) { finishVmec(cancelled, resultPath, message); });
@@ -406,9 +418,11 @@ void MainWindow::buildUi()
     connect(startParticlesButton_, &QPushButton::clicked, this,
             [this]()
             {
-                startParticlesButton_->setEnabled(false);
-                stopParticlesButton_->setEnabled(true);
-                startParticleSimulation();
+                if (startParticleSimulation())
+                {
+                    startParticlesButton_->setEnabled(false);
+                    stopParticlesButton_->setEnabled(true);
+                }
             });
     connect(stopParticlesButton_, &QPushButton::clicked, this,
             [this]()
@@ -588,6 +602,13 @@ void MainWindow::loadResult(const QString& path)
     try
     {
         equilibrium_ = io::loadVmecEquilibrium(path.toStdString());
+        if (particleTimer_.isActive())
+        {
+            stopParticlesButton_->setEnabled(false);
+            startParticlesButton_->setEnabled(true);
+            stopParticleSimulation();
+        }
+        vmecField_.reset();
         sourceLabel_->setText("VMEC EQUILIBRIUM\n" + QFileInfo(path).fileName());
         rebuildSurface();
         rebuildGuide();
@@ -710,6 +731,8 @@ void MainWindow::updateMetrics() const
     {
         text += QString("\nTotal β: %1%").arg(equilibrium_->betaTotal * 100.0, 0, 'g', 4);
     }
+    text += equilibrium_->hasField() ? QString("\nField data: %1 Nyquist modes (particle field %2)").arg(equilibrium_->fieldModes.size()).arg(vmecField_ ? "ready" : "built on first start")
+                                     : QString("\nField data: not in this file, particles unavailable");
     text += "\n\nStationary equilibrium. The animated path is illustrative, "
             "not a traced field line or plasma velocity.";
     metricsLabel_->setText(text);
@@ -720,36 +743,96 @@ void MainWindow::appendLog(const QString& message) const
     log_->appendPlainText(message.trimmed());
 }
 
-void MainWindow::startParticleSimulation()
+bool MainWindow::ensureVmecField()
 {
-    // create demo particles...
+    if (vmecField_)
+    {
+        return true;
+    }
+    if (!equilibrium_ || !equilibrium_->hasField())
+    {
+        QMessageBox::information(this, "Field data required", "Open a VMEC result that contains bsupumnc and bsupvmnc to simulate particles in its field.");
+        return false;
+    }
+    statusBar()->showMessage("Building magnetic field grid...");
+    QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+    QCoreApplication::processEvents();
+    try
+    {
+        vmecField_ = std::make_shared<const simulation::VmecFieldProvider>(*equilibrium_, simulation::VmecGridSpec{32, 96, 32});
+    }
+    catch (const std::exception& error)
+    {
+        QGuiApplication::restoreOverrideCursor();
+        QMessageBox::warning(this, "Field error", error.what());
+        return false;
+    }
+    QGuiApplication::restoreOverrideCursor();
+    statusBar()->showMessage("Magnetic field grid ready.");
+    updateMetrics();
+    return true;
+}
+
+bool MainWindow::startParticleSimulation()
+{
+    if (!ensureVmecField())
+    {
+        return false;
+    }
     simParticles_.clear();
     simParticleActors_.clear();
-    constexpr int count = 8;
+    simParticleAlive_.clear();
+
     std::mt19937_64 rng(123456);
-    std::uniform_real_distribution<double> posDist(-1.0, 1.0);
-    std::uniform_real_distribution<double> velDist(-0.5, 0.5);
-    for (int i = 0; i < count; ++i)
+    std::uniform_real_distribution<double> rhoDist(StartRhoMin, StartRhoMax);
+    std::uniform_real_distribution<double> angleDist(0.0, 2.0 * simulation::constants::PI);
+    std::normal_distribution<double> gauss(0.0, 1.0);
+    const double speed = std::sqrt(2.0 * ParticleEnergyEv * simulation::constants::JOULES_PER_EV / simulation::constants::PROTON_MASS);
+
+    const auto sphere = vtkSmartPointer<vtkSphereSource>::New();
+    sphere->SetRadius(0.12);
+    sphere->SetThetaResolution(20);
+    sphere->SetPhiResolution(20);
+    sphere->Update();
+
+    double strongestField = 0.0;
+    for (int i = 0; i < ParticleCount; ++i)
     {
         simulation::Particle p;
-        p.m = 1.0;
-        p.q = (i % 2 == 0) ? 1.0 : -1.0;
-        p.x = {2.0 + posDist(rng), posDist(rng), posDist(rng)};
-        p.v = {velDist(rng), velDist(rng), velDist(rng)};
-        simParticles_.push_back(p);
+        p.m = simulation::constants::PROTON_MASS;
+        p.q = simulation::constants::ELEMENTARY_CHARGE;
+        p.x = vmecField_->position({rhoDist(rng), angleDist(rng), angleDist(rng)});
 
-        const auto sphere = vtkSmartPointer<vtkSphereSource>::New();
-        sphere->SetRadius(0.05);
-        sphere->SetCenter(p.x[0], p.x[1], p.x[2]);
-        sphere->Update();
+        // Isotropic direction at fixed kinetic energy...
+        std::array<double, 3> direction{gauss(rng), gauss(rng), gauss(rng)};
+        const double length = std::sqrt(direction[0] * direction[0] + direction[1] * direction[1] + direction[2] * direction[2]);
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            p.v[axis] = speed * direction[axis] / length;
+        }
+
+        const auto b = vmecField_->B(p.x);
+        strongestField = std::max(strongestField, std::sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]));
+
+        simParticles_.push_back(p);
+        simParticleAlive_.push_back(1);
         auto actor = visualization::actorFor(sphere->GetOutput(), visualization::colorValues(visualization::ColorScheme::Renderer));
+        actor->GetProperty()->SetColor(1.0, 0.85, 0.1);
+        actor->GetProperty()->SetAmbient(0.7);
+        actor->GetProperty()->SetDiffuse(0.5);
+        actor->SetPosition(p.x.data());
         renderer_->AddActor(actor);
         simParticleActors_.push_back(actor);
     }
 
-    connect(&particleTimer_, &QTimer::timeout, this, [this]() { this->particleStep(); });
-    particleTimer_.setInterval(16); // about 60Hz
+    // Resolve the fastest gyration (strongest field) with StepsPerGyroperiod Boris steps....
+    const double gyroperiod = 2.0 * simulation::constants::PI * simulation::constants::PROTON_MASS / (simulation::constants::ELEMENTARY_CHARGE * strongestField);
+    particleDt_ = gyroperiod / StepsPerGyroperiod;
+    particleFrame_ = 0;
+    appendLog(QString("Particles: %1 protons, %2 eV, dt = %3 ns, %4 steps per frame").arg(ParticleCount).arg(ParticleEnergyEv).arg(particleDt_ * 1e9, 0, 'g', 4).arg(ParticleSubstepsPerFrame));
     particleTimer_.start();
+    renderWindow_->Render();
+    return true;
 }
 
 void MainWindow::stopParticleSimulation()
@@ -758,37 +841,55 @@ void MainWindow::stopParticleSimulation()
     for (auto& a : simParticleActors_)
     {
         if (a)
+        {
             renderer_->RemoveActor(a);
+        }
     }
     simParticleActors_.clear();
     simParticles_.clear();
+    simParticleAlive_.clear();
     renderWindow_->Render();
 }
 
 void MainWindow::particleStep()
 {
-    if (simParticles_.empty())
+    if (simParticles_.empty() || !vmecField_)
+    {
         return;
-    std::unique_ptr<simulation::FieldProvider> provider;
-    if (equilibrium_)
-    {
-        provider = std::make_unique<simulation::HelicalField>(0.1, 1.0, 1.0);
-    }
-    else
-    {
-        provider = std::make_unique<simulation::UniformField>(1.0);
     }
 
     const bool rel = relativisticCheck_ && relativisticCheck_->isChecked();
+    int confined = 0;
     for (size_t i = 0; i < simParticles_.size(); ++i)
     {
-        constexpr double dt = 0.001;
-        simulation::BorisIntegrator::step(simParticles_[i], dt, *provider, rel);
+        if (!simParticleAlive_[i])
+        {
+            continue;
+        }
+        for (int sub = 0; sub < ParticleSubstepsPerFrame; ++sub)
+        {
+            simulation::BorisIntegrator::step(simParticles_[i], particleDt_, *vmecField_, rel);
+        }
         auto& actor = simParticleActors_[i];
+        if (!vmecField_->contains(simParticles_[i].x))
+        {
+            simParticleAlive_[i] = 0; // left the last closed flux surface
+            if (actor)
+            {
+                actor->VisibilityOff();
+            }
+            continue;
+        }
+        ++confined;
         if (actor)
         {
             actor->SetPosition(simParticles_[i].x.data());
         }
+    }
+    if (++particleFrame_ % 15 == 0)
+    {
+        const int total = static_cast<int>(simParticles_.size());
+        statusBar()->showMessage(QString("Particles: %1 confined, %2 lost, t = %3 µs").arg(confined).arg(total - confined).arg(particleFrame_ * ParticleSubstepsPerFrame * particleDt_ * 1e6, 0, 'g', 4));
     }
     renderWindow_->Render();
 }
