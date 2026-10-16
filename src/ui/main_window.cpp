@@ -26,6 +26,7 @@
 #include <QThread>
 #include <QVBoxLayout>
 #include <QVTKOpenGLNativeWidget.h>
+#include <QApplication>
 
 #include "simulation/boris_integrator.h"
 #include "simulation/constants.h"
@@ -236,6 +237,32 @@ namespace
         return true;
     }
 
+    /**
+     * @brief A RAII class that sets the cursor to a wait cursor when constructed and restores the previous cursor when destroyed. \class WaitCursor
+     */
+    class WaitCursor
+    {
+    public:
+        /**
+         * @brief Constructs a WaitCursor object and sets the cursor to a wait cursor.
+         */
+        WaitCursor()
+        {
+            QApplication::setOverrideCursor(Qt::WaitCursor);
+        }
+
+        /**
+         * @brief Destructor that restores the previous cursor.
+         */
+        ~WaitCursor()
+        {
+            QApplication::restoreOverrideCursor();
+        }
+
+        WaitCursor(const WaitCursor&) = delete;
+        WaitCursor& operator=(const WaitCursor&) = delete;
+    };
+
 } // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
@@ -263,6 +290,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         QMessageBox::critical(this, "Error", QString("Failed to initialize the application: %1").arg(e.what()));
         throw;
     }
+}
+
+MainWindow::~MainWindow()
+{
+    runner_.disconnect(this);
+    runner_.cancel();
 }
 
 void MainWindow::buildUi()
@@ -756,19 +789,26 @@ bool MainWindow::ensureVmecField()
         return false;
     }
     statusBar()->showMessage("Building magnetic field grid...");
-    QGuiApplication::setOverrideCursor(Qt::WaitCursor);
-    QCoreApplication::processEvents();
-    try
+    QString errorText;
     {
-        vmecField_ = std::make_shared<const simulation::VmecFieldProvider>(*equilibrium_, simulation::VmecGridSpec{32, 96, 32});
+        WaitCursor busy;
+        setEnabled(false);
+        const auto reenable = qScopeGuard([this]() { setEnabled(true); });
+        QCoreApplication::processEvents();
+        try
+        {
+            vmecField_ = std::make_shared<const simulation::VmecFieldProvider>(*equilibrium_, simulation::VmecGridSpec{32, 96, 32});
+        }
+        catch (const std::exception& error)
+        {
+            errorText = error.what();
+        }
     }
-    catch (const std::exception& error)
+    if (!errorText.isEmpty())
     {
-        QGuiApplication::restoreOverrideCursor();
-        QMessageBox::warning(this, "Field error", error.what());
+        QMessageBox::warning(this, "Field error", errorText);
         return false;
     }
-    QGuiApplication::restoreOverrideCursor();
     statusBar()->showMessage("Magnetic field grid ready.");
     updateMetrics();
     return true;

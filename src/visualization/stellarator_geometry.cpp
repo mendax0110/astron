@@ -1,4 +1,5 @@
 #include "visualization/stellarator_geometry.h"
+#include "simulation/constants.h"
 
 #include <vtkActor.h>
 #include <vtkCellArray.h>
@@ -15,7 +16,6 @@ using namespace astron::visualization;
 
 namespace
 {
-    constexpr double Pi = std::numbers::pi;
     constexpr int PoloidalSamples = 64;
     constexpr int ToroidalSamples = 160;
 } // namespace
@@ -62,10 +62,10 @@ vtkSmartPointer<vtkPolyData> astron::visualization::surfaceData(const core::Equi
     const auto faces = vtkSmartPointer<vtkCellArray>::New();
     for (int toroidal = 0; toroidal < ToroidalSamples; ++toroidal)
     {
-        const double phi = 2.0 * Pi * toroidal / ToroidalSamples;
+        const double phi = 2.0 * simulation::constants::PI * toroidal / ToroidalSamples;
         for (int poloidal = 0; poloidal < PoloidalSamples; ++poloidal)
         {
-            const double theta = 2.0 * Pi * poloidal / PoloidalSamples;
+            const double theta = 2.0 * simulation::constants::PI * poloidal / PoloidalSamples;
             const auto point = position(equilibrium, surface, theta, phi, scale);
             points->InsertNextPoint(point.data());
         }
@@ -94,11 +94,11 @@ vtkSmartPointer<vtkPolyData> astron::visualization::schematicCoils()
     const auto lines = vtkSmartPointer<vtkCellArray>::New();
     for (int coil = 0; coil < 50; ++coil)
     {
-        const double center = 2.0 * Pi * coil / 50.0;
+        const double center = 2.0 * simulation::constants::PI * coil / 50.0;
         lines->InsertNextCell(97);
         for (int step = 0; step <= 96; ++step)
         {
-            const double theta = 2.0 * Pi * step / 96.0;
+            const double theta = 2.0 * simulation::constants::PI * step / 96.0;
             const double phi = center + 0.045 * std::sin(theta + 5.0 * center);
             const double radius = 5.5 + 0.93 * std::cos(theta) + 0.13 * std::cos(theta - 5.0 * center);
             const double height = 0.95 * std::sin(theta) + 0.13 * std::sin(theta - 5.0 * center);

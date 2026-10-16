@@ -49,6 +49,8 @@ namespace astron
          */
         explicit MainWindow(QWidget* parent = nullptr);
 
+        ~MainWindow() override;
+
     private:
         /**
          * @brief Builds the user interface components of the main window.
