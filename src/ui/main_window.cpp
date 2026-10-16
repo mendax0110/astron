@@ -2,6 +2,7 @@
 #include "io/vmec_netcdf_reader.h"
 #include "visualization/stellarator_geometry.h"
 
+#include <QApplication>
 #include <QCheckBox>
 #include <QDir>
 #include <QDockWidget>
@@ -26,7 +27,6 @@
 #include <QThread>
 #include <QVBoxLayout>
 #include <QVTKOpenGLNativeWidget.h>
-#include <QApplication>
 
 #include "simulation/boris_integrator.h"
 #include "simulation/constants.h"
