@@ -59,7 +59,7 @@ namespace
         int id_ = -1;
     };
 
-    void writeWout(const std::filesystem::path& path, bool transposed, bool includeRadius)
+    void writeWout(const std::filesystem::path& path, const bool transposed, const bool includeRadius)
     {
         WritableNetcdf file(path);
         int surfaceDimension = -1;

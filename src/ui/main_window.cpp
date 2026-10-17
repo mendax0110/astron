@@ -294,7 +294,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
 MainWindow::~MainWindow()
 {
-    runner_.disconnect(this);
+    (void)runner_.disconnect(this);
     runner_.cancel();
 }
 
@@ -824,7 +824,8 @@ bool MainWindow::startParticleSimulation()
     simParticleActors_.clear();
     simParticleAlive_.clear();
 
-    std::mt19937_64 rng(123456);
+    constexpr SeedConfig config;
+    std::mt19937_64 rng(config.seed);
     std::uniform_real_distribution<double> rhoDist(StartRhoMin, StartRhoMax);
     std::uniform_real_distribution<double> angleDist(0.0, 2.0 * simulation::constants::PI);
     std::normal_distribution<double> gauss(0.0, 1.0);

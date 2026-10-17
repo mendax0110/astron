@@ -75,7 +75,9 @@ TEST(ParticleIntegratorTest, RelativisticGyrationEnergyConserved)
 
     const double gamma0 = gamma(p);
     for (int i = 0; i < steps; ++i)
+    {
         BorisIntegrator::step(p, dt, field, true);
+    }
     const double gamma1 = gamma(p);
     EXPECT_NEAR(gamma1, gamma0, 1e-6);
 }

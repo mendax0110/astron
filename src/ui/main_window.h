@@ -191,5 +191,13 @@ namespace astron
         mex::Vec<int> simParticleAlive_;
         double particleDt_ = 0.0;
         int particleFrame_ = 0;
+
+        /**
+         * @brief Represents the configuration for seeding particles in the simulation. \struct SeedConfig
+         */
+        struct SeedConfig
+        {
+            uint64_t seed = 123456;
+        };
     };
 } // namespace astron
