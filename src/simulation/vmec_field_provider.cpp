@@ -336,8 +336,8 @@ VmecFieldProvider::VmecFieldProvider(const core::Equilibrium& equilibrium, const
 
 void VmecFieldProvider::sample(const double rho, const double theta, const double phi, const int firstChannel, const int channelCount, const bool derivatives, Sample& out) const
 {
-    const Weights wr = radialWeights(rho, hRho_, radial_);
-    const Weights wt = periodicWeights(theta, TwoPi, poloidal_);
+    const auto [indexRw, valueRw, slopeRw] = radialWeights(rho, hRho_, radial_);
+    const auto [indexPw, valuePw, slopePw] = periodicWeights(theta, TwoPi, poloidal_);
     const Weights wp = periodicWeights(phi, period_, toroidal_);
     const double scaleRho = 1.0 / hRho_;
     const double scaleTheta = 1.0 / hTheta_;
@@ -353,10 +353,10 @@ void VmecFieldProvider::sample(const double rho, const double theta, const doubl
         {
             for (int d = 0; d < 4; ++d)
             {
-                const double* node = &nodes_[((static_cast<size_t>(wr.index[a]) * poloidal_ + wt.index[b]) * toroidal_ + wp.index[d]) * ChannelCount];
-                const double value = wr.value[a] * wt.value[b] * wp.value[d];
-                const double dRho = derivatives ? wr.slope[a] * scaleRho * wt.value[b] * wp.value[d] : 0.0;
-                const double dTheta = derivatives ? wr.value[a] * wt.slope[b] * scaleTheta * wp.value[d] : 0.0;
+                const double* node = &nodes_[((static_cast<size_t>(indexRw[a]) * poloidal_ + indexPw[b]) * toroidal_ + wp.index[d]) * ChannelCount];
+                const double value = valueRw[a] * valuePw[b] * wp.value[d];
+                const double dRho = derivatives ? slopeRw[a] * scaleRho * valuePw[b] * wp.value[d] : 0.0;
+                const double dTheta = derivatives ? valueRw[a] * slopePw[b] * scaleTheta * wp.value[d] : 0.0;
                 for (int c = firstChannel; c < firstChannel + channelCount; ++c)
                 {
                     out.value[c] += value * node[c];

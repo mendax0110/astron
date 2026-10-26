@@ -12,12 +12,16 @@ NAMESPACE = re.compile(
 
 
 def without_comments_and_literals(source: str) -> str:
-    """Replace non-code with spaces while retaining character positions and lines."""
+    """
+    Replace non-code with spaces while retaining character positions and lines.
+    :param source: The source code to check
+    :return: The result
+    """
     result = list(source)
     index = 0
 
-    def blank(start: int, end: int) -> None:
-        for position in range(start, end):
+    def blank(start_intr: int, end_intr: int) -> None:
+        for position in range(start_intr, end_intr):
             if result[position] != "\n":
                 result[position] = " "
     while index < len(source):
@@ -56,6 +60,11 @@ def without_comments_and_literals(source: str) -> str:
 
 
 def violations(path: Path) -> list[str]:
+    """
+    Checks for violations agains our rules
+    :param path: The path to check
+    :return:  Errors if any
+    """
     source = path.read_text(encoding="utf-8")
     code = without_comments_and_literals(source)
     openings = {match.end() - 1: match.group("name") for match in NAMESPACE.finditer(code)}
@@ -82,6 +91,10 @@ def violations(path: Path) -> list[str]:
 
 
 def main() -> int:
+    """
+    Helper to check the namespace style
+    :return: zero on success, one on error
+    """
     root = Path(__file__).resolve().parents[1]
     source_paths = sorted((root / "src").rglob("*.cpp"))
     source_paths += sorted((root / "src").rglob("*.h"))

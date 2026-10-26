@@ -12,7 +12,7 @@ using namespace astron::jobs;
 TEST(VmecRunnerTest, RejectsMissingInput)
 {
     VmecRunner runner;
-    const VmecRunRequest request{{}, {}, QCoreApplication::applicationFilePath(), 1};
+    const VmecRunRequest request{.inputPath = {}, .inputText = {}, .executable = QCoreApplication::applicationFilePath(), .threads = 1};
 
     const auto result = runner.start(request);
 
@@ -26,7 +26,7 @@ TEST(VmecRunnerTest, CancelsRunningProcessWithoutImportingResult)
     QTemporaryDir runsRoot;
     ASSERT_TRUE(runsRoot.isValid());
     VmecRunner runner(nullptr, runsRoot.path());
-    const VmecRunRequest request{"--solver-child", "wait for cancellation", QCoreApplication::applicationFilePath(), 1};
+    const VmecRunRequest request{.inputPath = "--solver-child", .inputText = "wait for cancellation", .executable = QCoreApplication::applicationFilePath(), .threads = 1};
     QEventLoop loop;
     QEventLoop readyLoop;
     bool completed = false;

@@ -30,7 +30,7 @@ astron::core::Equilibrium astron::io::loadVmecEquilibrium(const std::filesystem:
     result.modes.reserve(modeCount);
     for (int index = 0; index < modeCount; ++index)
     {
-        result.modes.push_back({poloidalModes[index], toroidalModes[index]});
+        result.modes.push_back({.m = poloidalModes[index], .n = toroidalModes[index]});
     }
 
     result.radiusCos = NetcdfFile::readModes(file.id(), "rmnc", result.radialSurfaces, modeCount);
@@ -58,7 +58,7 @@ astron::core::Equilibrium astron::io::loadVmecEquilibrium(const std::filesystem:
                 result.fieldModes.reserve(fieldModeCount);
                 for (int index = 0; index < fieldModeCount; ++index)
                 {
-                    result.fieldModes.push_back({fieldPoloidal[index], fieldToroidal[index]});
+                    result.fieldModes.push_back({.m = fieldPoloidal[index], .n = fieldToroidal[index]});
                 }
                 result.bThetaCos = std::move(bTheta);
                 result.bPhiCos = std::move(bPhi);

@@ -48,15 +48,15 @@ VmecStartResult VmecRunner::start(const VmecRunRequest& request)
 {
     if (active_)
     {
-        return {{}, QStringLiteral("VMEC++ is already running.")};
+        return {.runDirectory = {}, .error = QStringLiteral("VMEC++ is already running.")};
     }
     if (request.inputPath.isEmpty() || request.inputText.isEmpty())
     {
-        return {{}, QStringLiteral("Open a VMEC input file first.")};
+        return {.runDirectory = {}, .error = QStringLiteral("Open a VMEC input file first.")};
     }
     if (request.executable.trimmed().isEmpty())
     {
-        return {{}, QStringLiteral("Set the VMEC++ executable path.")};
+        return {.runDirectory = {}, .error = QStringLiteral("Set the VMEC++ executable path.")};
     }
 
     const QFileInfo original(request.inputPath);
@@ -64,18 +64,18 @@ VmecStartResult VmecRunner::start(const VmecRunRequest& request)
     const QString runDirectory = base + "/" + QUuid::createUuid().toString(QUuid::WithoutBraces);
     if (!QDir().mkpath(runDirectory))
     {
-        return {{}, QStringLiteral("Cannot create the run directory.")};
+        return {.runDirectory = {}, .error = QStringLiteral("Cannot create the run directory.")};
     }
 
     QFile input(runDirectory + "/" + original.fileName());
     if (!input.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        return {{}, input.errorString()};
+        return {.runDirectory = {}, .error = input.errorString()};
     }
     const QByteArray contents = request.inputText.toUtf8();
     if (input.write(contents) != contents.size() || !input.flush())
     {
-        return {{}, input.errorString()};
+        return {.runDirectory = {}, .error = input.errorString()};
     }
     input.close();
 
@@ -89,7 +89,7 @@ VmecStartResult VmecRunner::start(const VmecRunRequest& request)
     cancelRequested_ = false;
     active_ = true;
     process_.start(request.executable.trimmed(), {original.fileName()});
-    return {runDirectory, {}};
+    return {.runDirectory = runDirectory, .error = {}};
 }
 
 void VmecRunner::cancel()

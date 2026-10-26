@@ -24,7 +24,7 @@ int NetcdfFile::id() const
     return id_;
 }
 
-int NetcdfFile::variableId(int file, const char* name, const bool required)
+int NetcdfFile::variableId(const int file, const char* name, const bool required)
 {
     int id = -1;
     const int status = nc_inq_varid(file, name, &id);
@@ -35,7 +35,7 @@ int NetcdfFile::variableId(int file, const char* name, const bool required)
     return id;
 }
 
-int NetcdfFile::readInt(int file, const char* name)
+int NetcdfFile::readInt(const int file, const char* name)
 {
     const int id = variableId(file, name, true);
     int value = 0;
@@ -46,7 +46,7 @@ int NetcdfFile::readInt(int file, const char* name)
     return value;
 }
 
-double NetcdfFile::readOptionalDouble(int file, const char* name)
+double NetcdfFile::readOptionalDouble(const int file, const char* name)
 {
     const int id = variableId(file, name, false);
     double value = 0.0;
@@ -60,7 +60,7 @@ double NetcdfFile::readOptionalDouble(int file, const char* name)
     return value;
 }
 
-mex::Vec<double> NetcdfFile::readVector(int file, const char* name, const int expectedSize, const bool required)
+mex::Vec<double> NetcdfFile::readVector(const int file, const char* name, const int expectedSize, const bool required)
 {
     const int id = variableId(file, name, required);
     if (id < 0)
