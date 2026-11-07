@@ -98,6 +98,7 @@ if(ASTRON_BUILD_TESTS)
         tests/vmec_netcdf_reader_test.cpp
         tests/vmec_runner_test.cpp
         tests/particle_integrator_test.cpp
+        tests/vmec_field_provider_test.cpp
     )
     target_link_libraries(astron_tests PRIVATE astron_domain GTest::gtest)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

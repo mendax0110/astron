@@ -2,6 +2,9 @@
 
 #include <array>
 #include <cmath>
+#include <memory>
+#include <stdexcept>
+#include <utility>
 
 /**
  * @brief Astron namespace for particle simulation \namespace astron::simulation
@@ -62,6 +65,60 @@ namespace astron::simulation
         }
 
         double bz_ = 0.0;
+    };
+
+    /**
+     * @brief Adds a spatially uniform electric field to an existing magnetic-field provider. \class UniformElectricFieldProvider
+     * @details The electric field is specified in volts per meter and the wrapped provider supplies the magnetic field.
+     */
+    class UniformElectricFieldProvider final : public FieldProvider
+    {
+    public:
+        /**
+         * @brief Constructs a provider with a uniform electric field and a delegated magnetic field.
+         * @param magneticField Provider supplying the magnetic field.
+         * @param electricField Uniform electric field in volts per meter.
+         * @throws std::invalid_argument if the provider is null or a component is not finite.
+         */
+        UniformElectricFieldProvider(std::shared_ptr<const FieldProvider> magneticField, const std::array<double, 3>& electricField)
+            : magneticField_(std::move(magneticField)), electricField_(electricField)
+        {
+            if (!magneticField_)
+            {
+                throw std::invalid_argument("Magnetic field provider must not be null");
+            }
+            for (const double component : electricField_)
+            {
+                if (!std::isfinite(component))
+                {
+                    throw std::invalid_argument("Electric field components must be finite");
+                }
+            }
+        }
+
+        /**
+         * @brief Returns the magnetic field from the wrapped provider.
+         * @param x Position in meters.
+         * @return Magnetic field in tesla.
+         */
+        std::array<double, 3> B(const std::array<double, 3>& x) const override
+        {
+            return magneticField_->B(x);
+        }
+
+        /**
+         * @brief Returns the configured uniform electric field.
+         * @param x Position in meters.
+         * @return Electric field in volts per meter.
+         */
+        std::array<double, 3> E(const std::array<double, 3>&) const override
+        {
+            return electricField_;
+        }
+
+    private:
+        std::shared_ptr<const FieldProvider> magneticField_;
+        std::array<double, 3> electricField_;
     };
 
     /**

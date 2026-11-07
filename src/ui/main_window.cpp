@@ -4,6 +4,7 @@
 
 #include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDir>
 #include <QDockWidget>
 #include <QDoubleSpinBox>
@@ -47,6 +48,7 @@
 #include <algorithm>
 #include <cmath>
 #include <exception>
+#include <limits>
 #include <memory>
 #include <numbers>
 #include <random>
@@ -56,9 +58,7 @@ using namespace astron;
 
 namespace
 {
-    constexpr int ParticleCount = 16;
     constexpr int ParticleSubstepsPerFrame = 100;
-    constexpr double ParticleEnergyEv = 1000.0;
     constexpr double StepsPerGyroperiod = 40.0;
     constexpr double StartRhoMin = 0.2;
     constexpr double StartRhoMax = 0.8;
@@ -388,7 +388,42 @@ void MainWindow::buildUi()
     stopButton_->setEnabled(false);
     controlsLayout->addWidget(stopButton_);
 
-    // Particle simulation controls
+    auto* particleGroup = new QGroupBox("Test-particle source", controls);
+    auto* particleLayout = new QFormLayout(particleGroup);
+    particleSpeciesCombo_ = new QComboBox(particleGroup);
+    particleSpeciesCombo_->addItems({"Proton", "Deuteron", "Electron", "Alpha particle"});
+    particleLayout->addRow("Species", particleSpeciesCombo_);
+    particleCountSpin_ = new QSpinBox(particleGroup);
+    particleCountSpin_->setRange(1, 1000);
+    particleCountSpin_->setValue(16);
+    particleLayout->addRow("Particle count", particleCountSpin_);
+    particleEnergySpin_ = new QDoubleSpinBox(particleGroup);
+    particleEnergySpin_->setRange(0.001, 1000000.0);
+    particleEnergySpin_->setDecimals(3);
+    particleEnergySpin_->setSingleStep(1.0);
+    particleEnergySpin_->setValue(1.0);
+    particleEnergySpin_->setSuffix(" keV");
+    particleLayout->addRow("Initial kinetic energy", particleEnergySpin_);
+    particleSeedSpin_ = new QSpinBox(particleGroup);
+    particleSeedSpin_->setRange(0, std::numeric_limits<int>::max());
+    particleSeedSpin_->setValue(123456);
+    particleLayout->addRow("Random seed", particleSeedSpin_);
+    controlsLayout->addWidget(particleGroup);
+
+    auto* electricFieldGroup = new QGroupBox("Imposed electric field", controls);
+    auto* electricFieldLayout = new QFormLayout(electricFieldGroup);
+    constexpr std::array<const char*, 3> electricFieldLabels = {"Ex", "Ey", "Ez"};
+    for (size_t axis = 0; axis < electricFieldSpins_.size(); ++axis)
+    {
+        electricFieldSpins_[axis] = new QDoubleSpinBox(electricFieldGroup);
+        electricFieldSpins_[axis]->setRange(-1e7, 1e7);
+        electricFieldSpins_[axis]->setDecimals(2);
+        electricFieldSpins_[axis]->setSingleStep(10.0);
+        electricFieldSpins_[axis]->setSuffix(" V/m");
+        electricFieldLayout->addRow(electricFieldLabels[axis], electricFieldSpins_[axis]);
+    }
+    controlsLayout->addWidget(electricFieldGroup);
+
     startParticlesButton_ = new QPushButton("Start particles", controls);
     controlsLayout->addWidget(startParticlesButton_);
     stopParticlesButton_ = new QPushButton("Stop particles", controls);
@@ -642,6 +677,7 @@ void MainWindow::loadResult(const QString& path)
             stopParticleSimulation();
         }
         vmecField_.reset();
+        particleField_.reset();
         sourceLabel_->setText("VMEC EQUILIBRIUM\n" + QFileInfo(path).fileName());
         rebuildSurface();
         rebuildGuide();
@@ -820,16 +856,58 @@ bool MainWindow::startParticleSimulation()
     {
         return false;
     }
+    const std::array<double, 3> electricField = {electricFieldSpins_[0]->value(), electricFieldSpins_[1]->value(), electricFieldSpins_[2]->value()};
+    if (std::ranges::all_of(electricField, [](const double component) { return component == 0.0; }))
+    {
+        particleField_ = vmecField_;
+    }
+    else
+    {
+        particleField_ = std::make_shared<const simulation::UniformElectricFieldProvider>(vmecField_, electricField);
+    }
+
+    double particleMass = simulation::constants::PROTON_MASS;
+    double particleCharge = simulation::constants::ELEMENTARY_CHARGE;
+    QString speciesName = "proton";
+    switch (particleSpeciesCombo_->currentIndex())
+    {
+    case 1:
+        particleMass = simulation::constants::DEUTERON_MASS;
+        speciesName = "deuteron";
+        break;
+    case 2:
+        particleMass = simulation::constants::ELECTRON_MASS;
+        particleCharge = -simulation::constants::ELEMENTARY_CHARGE;
+        speciesName = "electron";
+        break;
+    case 3:
+        particleMass = simulation::constants::ALPHA_PARTICLE_MASS;
+        particleCharge = 2.0 * simulation::constants::ELEMENTARY_CHARGE;
+        speciesName = "alpha particle";
+        break;
+    default:
+        break;
+    }
+
+    const double kineticEnergy = particleEnergySpin_->value() * 1000.0 * simulation::constants::JOULES_PER_EV;
+    const double restEnergy = particleMass * simulation::constants::C * simulation::constants::C;
+    const bool relativistic = relativisticCheck_->isChecked();
+    const double speed = relativistic ? simulation::constants::C * std::sqrt(kineticEnergy * (kineticEnergy + 2.0 * restEnergy)) / (kineticEnergy + restEnergy)
+                                      : std::sqrt(2.0 * kineticEnergy / particleMass);
+    if (!std::isfinite(speed) || speed >= simulation::constants::C)
+    {
+        QMessageBox::warning(this, "Particle energy", "This energy requires the relativistic Boris option.");
+        return false;
+    }
+
     simParticles_.clear();
     simParticleActors_.clear();
     simParticleAlive_.clear();
 
-    constexpr SeedConfig config;
-    std::mt19937_64 rng(config.seed);
+    std::mt19937_64 rng(static_cast<uint64_t>(particleSeedSpin_->value()));
     std::uniform_real_distribution<double> rhoDist(StartRhoMin, StartRhoMax);
     std::uniform_real_distribution<double> angleDist(0.0, 2.0 * simulation::constants::PI);
     std::normal_distribution<double> gauss(0.0, 1.0);
-    const double speed = std::sqrt(2.0 * ParticleEnergyEv * simulation::constants::JOULES_PER_EV / simulation::constants::PROTON_MASS);
 
     const auto sphere = vtkSmartPointer<vtkSphereSource>::New();
     sphere->SetRadius(0.12);
@@ -838,12 +916,13 @@ bool MainWindow::startParticleSimulation()
     sphere->Update();
 
     double strongestField = 0.0;
-    for (int i = 0; i < ParticleCount; ++i)
+    const int particleCount = particleCountSpin_->value();
+    for (int i = 0; i < particleCount; ++i)
     {
         simulation::Particle p;
-        p.m = simulation::constants::PROTON_MASS;
-        p.q = simulation::constants::ELEMENTARY_CHARGE;
-        p.x = vmecField_->position({rhoDist(rng), angleDist(rng), angleDist(rng)});
+        p.m = particleMass;
+        p.q = particleCharge;
+        p.x = vmecField_->position({.rho = rhoDist(rng), .theta = angleDist(rng), .phi = angleDist(rng)});
 
         // Isotropic direction at fixed kinetic energy...
         std::array<double, 3> direction{gauss(rng), gauss(rng), gauss(rng)};
@@ -867,13 +946,21 @@ bool MainWindow::startParticleSimulation()
         simParticleActors_.push_back(actor);
     }
 
-    // Resolve the fastest gyration (strongest field) with StepsPerGyroperiod Boris steps....
-    const double gyroperiod = 2.0 * simulation::constants::PI * simulation::constants::PROTON_MASS / (simulation::constants::ELEMENTARY_CHARGE * strongestField);
+    if (!(strongestField > 0.0) || !std::isfinite(strongestField))
+    {
+        QMessageBox::warning(this, "Field error", "The sampled magnetic field is zero or non-finite at all particle positions.");
+        stopParticleSimulation();
+        return false;
+    }
+
+    const double gyroperiod = 2.0 * simulation::constants::PI * particleMass / (std::abs(particleCharge) * strongestField);
     particleDt_ = gyroperiod / StepsPerGyroperiod;
     particleFrame_ = 0;
-    appendLog(QString("Particles: %1 protons, %2 eV, dt = %3 ns, %4 steps per frame")
-                  .arg(ParticleCount)
-                  .arg(ParticleEnergyEv)
+    appendLog(QString("Particles: %1 %2, %3 keV, seed %4, dt = %5 ns, %6 steps per frame")
+                  .arg(particleCount)
+                  .arg(speciesName)
+                  .arg(particleEnergySpin_->value(), 0, 'g', 6)
+                  .arg(particleSeedSpin_->value())
                   .arg(particleDt_ * 1e9, 0, 'g', 4)
                   .arg(ParticleSubstepsPerFrame));
     particleTimer_.start();
@@ -894,12 +981,13 @@ void MainWindow::stopParticleSimulation()
     simParticleActors_.clear();
     simParticles_.clear();
     simParticleAlive_.clear();
+    particleField_.reset();
     renderWindow_->Render();
 }
 
 void MainWindow::particleStep()
 {
-    if (simParticles_.empty() || !vmecField_)
+    if (simParticles_.empty() || !vmecField_ || !particleField_)
     {
         return;
     }
@@ -914,7 +1002,7 @@ void MainWindow::particleStep()
         }
         for (int sub = 0; sub < ParticleSubstepsPerFrame; ++sub)
         {
-            simulation::BorisIntegrator::step(simParticles_[i], particleDt_, *vmecField_, rel);
+            simulation::BorisIntegrator::step(simParticles_[i], particleDt_, *particleField_, rel);
         }
         auto& actor = simParticleActors_[i];
         if (!vmecField_->contains(simParticles_[i].x))

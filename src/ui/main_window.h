@@ -19,6 +19,7 @@
 #include <optional>
 
 class QCheckBox;
+class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
@@ -184,20 +185,18 @@ namespace astron
         QPushButton* startParticlesButton_ = nullptr;
         QPushButton* stopParticlesButton_ = nullptr;
         QCheckBox* relativisticCheck_ = nullptr;
+        QComboBox* particleSpeciesCombo_ = nullptr;
+        QSpinBox* particleCountSpin_ = nullptr;
+        QDoubleSpinBox* particleEnergySpin_ = nullptr;
+        QSpinBox* particleSeedSpin_ = nullptr;
+        std::array<QDoubleSpinBox*, 3> electricFieldSpins_ = {};
         QTimer particleTimer_;
         mex::Vec<simulation::Particle> simParticles_;
         mex::Vec<vtkSmartPointer<vtkActor>> simParticleActors_;
         std::shared_ptr<const simulation::VmecFieldProvider> vmecField_;
+        std::shared_ptr<const simulation::FieldProvider> particleField_;
         mex::Vec<int> simParticleAlive_;
         double particleDt_ = 0.0;
         int particleFrame_ = 0;
-
-        /**
-         * @brief Represents the configuration for seeding particles in the simulation. \struct SeedConfig
-         */
-        struct SeedConfig
-        {
-            uint64_t seed = 123456;
-        };
     };
 } // namespace astron
