@@ -105,19 +105,21 @@ TEST(VmecFieldProviderTest, InterpolatedFieldMatchesDirectFourierEvaluation)
         const auto position = field.position({rho, theta, phi});
         const auto actual = field.tryB(position);
         ASSERT_TRUE(actual.has_value());
+        const auto actualValue = actual.value_or(std::array<double, 3>{});
 
         const auto reference = simulation::evaluateVmecField(equilibrium, rho, theta, phi);
         const auto expected = toCartesian(reference.bCylindrical, phi);
         for (size_t component = 0; component < expected.size(); ++component)
         {
-            EXPECT_NEAR((*actual)[component], expected[component], 5e-6);
+            EXPECT_NEAR(actualValue[component], expected[component], 5e-6);
         }
 
         const auto coordinates = field.locate(position);
         ASSERT_TRUE(coordinates.has_value());
-        EXPECT_NEAR(coordinates->rho, rho, 1e-8);
-        EXPECT_NEAR(std::remainder(coordinates->theta - theta, 2.0 * std::numbers::pi), 0.0, 1e-8);
-        EXPECT_NEAR(std::remainder(coordinates->phi - phi, 2.0 * std::numbers::pi), 0.0, 1e-8);
+        const auto coordinateValue = coordinates.value_or(simulation::FluxCoordinates{});
+        EXPECT_NEAR(coordinateValue.rho, rho, 1e-8);
+        EXPECT_NEAR(std::remainder(coordinateValue.theta - theta, 2.0 * std::numbers::pi), 0.0, 1e-8);
+        EXPECT_NEAR(std::remainder(coordinateValue.phi - phi, 2.0 * std::numbers::pi), 0.0, 1e-8);
     }
 }
 
