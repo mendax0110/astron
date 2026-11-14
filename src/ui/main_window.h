@@ -8,6 +8,7 @@
 #include "../../third_party/mexVec/include/Vec.hpp"
 
 #include <QMainWindow>
+#include <QSettings>
 #include <QString>
 #include <QTimer>
 
@@ -149,6 +150,16 @@ namespace astron
          */
         void particleStep();
 
+        /**
+         * @brief Loads persistent settings from the QSettings object, restoring user preferences and application state.
+         */
+        void loadPersistentSettings();
+
+        /**
+         * @brief Saves persistent settings to the QSettings object, preserving user preferences and application state.
+         */
+        void savePersistentSettings() const;
+
         QVTKOpenGLNativeWidget* viewport_ = nullptr;
         QLabel* sourceLabel_ = nullptr;
         QLabel* metricsLabel_ = nullptr;
@@ -168,6 +179,7 @@ namespace astron
         QPlainTextEdit* log_ = nullptr;
         QPushButton* runButton_ = nullptr;
         QPushButton* stopButton_ = nullptr;
+        QSettings settings_{QSettings::FileFormat::NativeFormat, QSettings::UserScope, "astron", "astron"};
 
         vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow_;
         vtkSmartPointer<vtkRenderer> renderer_;

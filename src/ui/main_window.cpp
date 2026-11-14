@@ -270,6 +270,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     try
     {
         buildUi();
+        loadPersistentSettings();
         buildScene();
         rebuildSurface();
         rebuildGuide();
@@ -294,6 +295,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
 MainWindow::~MainWindow()
 {
+    savePersistentSettings();
     (void)runner_.disconnect(this);
     runner_.cancel();
 }
@@ -571,27 +573,45 @@ void MainWindow::buildScene()
 
 void MainWindow::openResult()
 {
-    const QString path = QFileDialog::getOpenFileName(this, "Open VMEC output", {}, "VMEC NetCDF (*.nc);;All files (*)");
-    if (!path.isEmpty())
-    {
-        loadResult(path);
-    }
-}
+    const QString defaultPath = settings_.value("last_vmec_result_path", QDir::homePath()).toString();
+    const QString path = QFileDialog::getOpenFileName(
+        this,
+        "Open VMEC output",
+        defaultPath,
+        "VMEC NetCDF (*.nc);;All files (*)");
 
-void MainWindow::openInput()
-{
-    const QString path = QFileDialog::getOpenFileName(this, "Open VMEC input", {}, "VMEC input (input.* *.json);;All files (*)");
     if (path.isEmpty())
     {
         return;
     }
+
+    settings_.setValue("last_vmec_result_path", path);
+    loadResult(path);
+}
+
+void MainWindow::openInput()
+{
+    const QString defaultPath = settings_.value("last_vmec_input_path", QDir::homePath()).toString();
+    const QString path = QFileDialog::getOpenFileName(
+        this,
+        "Open VMEC input",
+        defaultPath,
+        "VMEC input (input.* *.json);;All files (*)");
+
+    if (path.isEmpty())
+    {
+        return;
+    }
+
+    settings_.setValue("last_vmec_input_path", path);
+    inputPath_->setText(path);
+
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         QMessageBox::warning(this, "Input error", file.errorString());
         return;
     }
-    inputPath_->setText(path);
     inputEditor_->setPlainText(QString::fromUtf8(file.readAll()));
     readInputControls();
     appendLog("Loaded input: " + path);
@@ -1029,4 +1049,52 @@ void MainWindow::particleStep()
                                      .arg(particleFrame_ * ParticleSubstepsPerFrame * particleDt_ * 1e6, 0, 'g', 4));
     }
     renderWindow_->Render();
+}
+
+void MainWindow::loadPersistentSettings()
+{
+    const QString lastResult = settings_.value("last_vmec_result_path", "").toString();
+    const QString lastInput = settings_.value("last_vmec_input_path", "").toString();
+    const QString lastSolver = settings_.value("last_vmec_solver_path", QDir::homePath() + "/.local/bin/vmecpp").toString();
+
+    if (!lastInput.isEmpty() && QFileInfo::exists(lastInput))
+    {
+        inputPath_->setText(lastInput);
+        QFile inputFile(lastInput);
+        if (inputFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            inputEditor_->setPlainText(QString::fromUtf8(inputFile.readAll()));
+            inputFile.close();
+            readInputControls();
+        }
+    }
+
+    if (!lastSolver.isEmpty())
+    {
+        solverPath_->setText(lastSolver);
+    }
+
+    connect(inputPath_, &QLineEdit::textChanged, this,
+            [this]()
+            {
+                settings_.setValue("last_vmec_input_path", inputPath_->text());
+            });
+
+    connect(solverPath_, &QLineEdit::textChanged, this,
+            [this]()
+            {
+                settings_.setValue("last_vmec_solver_path", solverPath_->text());
+            });
+
+    if (!lastResult.isEmpty() && QFileInfo::exists(lastResult))
+    {
+        loadResult(lastResult);
+    }
+}
+
+void MainWindow::savePersistentSettings() const
+{
+    settings_.setValue("last_vmec_result_path", equilibrium_ ? QString::fromStdString(equilibrium_->source.string()) : settings_.value("last_vmec_result_path", "").toString());
+    settings_.setValue("last_vmec_input_path", inputPath_->text());
+    settings_.setValue("last_vmec_solver_path", solverPath_->text());
 }
