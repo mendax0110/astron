@@ -158,7 +158,7 @@ namespace astron
         /**
          * @brief Saves persistent settings to the QSettings object, preserving user preferences and application state.
          */
-        void savePersistentSettings() const;
+        void savePersistentSettings();
 
         QVTKOpenGLNativeWidget* viewport_ = nullptr;
         QLabel* sourceLabel_ = nullptr;
@@ -179,7 +179,7 @@ namespace astron
         QPlainTextEdit* log_ = nullptr;
         QPushButton* runButton_ = nullptr;
         QPushButton* stopButton_ = nullptr;
-        QSettings settings_{QSettings::FileFormat::NativeFormat, QSettings::UserScope, "astron", "astron"};
+        QSettings settings_{"astron", "astron"};
 
         vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow_;
         vtkSmartPointer<vtkRenderer> renderer_;

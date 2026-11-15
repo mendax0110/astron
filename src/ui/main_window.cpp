@@ -574,11 +574,7 @@ void MainWindow::buildScene()
 void MainWindow::openResult()
 {
     const QString defaultPath = settings_.value("last_vmec_result_path", QDir::homePath()).toString();
-    const QString path = QFileDialog::getOpenFileName(
-        this,
-        "Open VMEC output",
-        defaultPath,
-        "VMEC NetCDF (*.nc);;All files (*)");
+    const QString path = QFileDialog::getOpenFileName(this, "Open VMEC output", defaultPath, "VMEC NetCDF (*.nc);;All files (*)");
 
     if (path.isEmpty())
     {
@@ -592,11 +588,7 @@ void MainWindow::openResult()
 void MainWindow::openInput()
 {
     const QString defaultPath = settings_.value("last_vmec_input_path", QDir::homePath()).toString();
-    const QString path = QFileDialog::getOpenFileName(
-        this,
-        "Open VMEC input",
-        defaultPath,
-        "VMEC input (input.* *.json);;All files (*)");
+    const QString path = QFileDialog::getOpenFileName(this, "Open VMEC input", defaultPath, "VMEC input (input.* *.json);;All files (*)");
 
     if (path.isEmpty())
     {
@@ -1074,17 +1066,8 @@ void MainWindow::loadPersistentSettings()
         solverPath_->setText(lastSolver);
     }
 
-    connect(inputPath_, &QLineEdit::textChanged, this,
-            [this]()
-            {
-                settings_.setValue("last_vmec_input_path", inputPath_->text());
-            });
-
-    connect(solverPath_, &QLineEdit::textChanged, this,
-            [this]()
-            {
-                settings_.setValue("last_vmec_solver_path", solverPath_->text());
-            });
+    connect(inputPath_, &QLineEdit::textChanged, this, [this]() { settings_.setValue("last_vmec_input_path", inputPath_->text()); });
+    connect(solverPath_, &QLineEdit::textChanged, this, [this]() { settings_.setValue("last_vmec_solver_path", solverPath_->text()); });
 
     if (!lastResult.isEmpty() && QFileInfo::exists(lastResult))
     {
@@ -1092,7 +1075,7 @@ void MainWindow::loadPersistentSettings()
     }
 }
 
-void MainWindow::savePersistentSettings() const
+void MainWindow::savePersistentSettings()
 {
     settings_.setValue("last_vmec_result_path", equilibrium_ ? QString::fromStdString(equilibrium_->source.string()) : settings_.value("last_vmec_result_path", "").toString());
     settings_.setValue("last_vmec_input_path", inputPath_->text());
